@@ -1,6 +1,8 @@
 # Tension Session
+
+## Follow progress at [@tensionsession](https://www.instagram.com/tensionsession) on Instagram!
  
-**Tension Session** is a gym companion app designed to make your workouts more effective and easier to track.  
+**Tension Session** is a gym companion app designed to make your workouts more effective and easier to track. 
 
 ## Key Features
 - **Simple, approachable design** – Many apps out there are unapproachable to weight-lifting beginners like myself, but Tension Session is simple.  
