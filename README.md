@@ -5,22 +5,23 @@
 ## V2 is under active development!
 
 - [ ] Complete the foundation for the phone and watch apps
-  - [ ] Structs
-    - [ ] Weight unit for pounds and kilograms
-    - [ ] Set details
-    - [ ] Exercises
-    - [ ] Workout
-    - [ ] UserInfo
-  - [ ] Services
-    - [ ] App context: This object contains a list of templates, a list of historical workouts, and the user info. It supports creating a copy of a given template and adding a new historical workout.
-    - [ ] Template buffer: This holds the template workout before and during a workout. When a workout is ended, it is remembered as a historical workout. It can hold methods for starting, pausing, resuming, and ending a workout, as well as adding it to the app context. But I still need to decide if the bulk of the code / work should be done in a `TemplateBuffer` method or a `Workout` method. (Perhaps this is an implementation detail that doesn't really matter?) Likely change `Workout`-internal things from a method of `Workout`, and do other work in `TemplateBuffer`. 
+  - [x] Structs
+    - [x] Weight unit for pounds and kilograms
+    - [x] Set details
+    - [x] Exercises
+    - [x] Workout
+    - [x] UserInfo
+  - [x] Services
+    - [x] App context: This object contains a list of templates, a list of historical workouts, and the user info. It supports creating a copy of a given template and adding a new historical workout.
+    - [x] Template buffer: This holds the template workout before and during a workout. When a workout is ended, it is remembered as a historical workout. It can hold methods for starting, pausing, resuming, and ending a workout, as well as adding it to the app context. But I still need to decide if the bulk of the code / work should be done in a `TemplateBuffer` method or a `Workout` method. (Perhaps this is an implementation detail that doesn't really matter?) Likely change `Workout`-internal things from a method of `Workout`, and do other work in `TemplateBuffer`.
+    - [ ] HealthKit manager
     - [ ] Companion (THe big boi): Handle transfers and syncing between watch and phone. I might want to first create a protocol, so that I can use a `MockCompanion` in testing.
   - [ ] Tests for all user facing things
-    - [ ] Workout creations / deletions
-    - [ ] Workout starts / pauses / resumes / ends
-    - [ ] Changing the current template selection
+    - [x] Workout creations / deletions
+    - [x] Workout starts / pauses / resumes / ends
+    - [x] Changing the current template selection
     - [ ] Transferring things between a mock phone and mock watch? Using `MockCompanion`
-- [ ] Complete the watch app
+- [x] Complete the watch app
 - [ ] Complete the phone app
  
 **Tension Session** is a gym companion app designed to make your workouts more effective and easier to track. 
