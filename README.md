@@ -4,6 +4,8 @@
 
 ## V2 is under active development!
 
+### Current Task: Companion
+
 - [ ] Complete the foundation for the phone and watch apps
   - [x] Structs
     - [x] Weight unit for pounds and kilograms
