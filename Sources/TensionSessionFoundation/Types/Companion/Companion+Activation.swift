@@ -32,8 +32,10 @@ public extension Companion {
                     self?.requestTemplateWorkoutsHashCheck()
                 }
                 
-                self?.requestExerciseCatalogHashCheckSchedule = {
-                    let schedule = Schedule {
+                guard let self else { return }
+                
+                self.requestExerciseCatalogHashCheckSchedule = {
+                    let schedule = Schedule { [weak self] in
                         self?.requestExerciseCatalogHashCheck()
                     }
                     schedule.invoke(after: .seconds(3))
