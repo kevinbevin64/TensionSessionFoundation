@@ -152,6 +152,33 @@ public extension Companion {
         }
     }
     
+    func requestExerciseCatalogHashCheck(_ hash: Exercise.Catalog.DTO.Hash) {
+        
+        print("Requesting exercise catalog hash check.")
+        
+        do {
+            
+            let instruction = SyncInstruction(
+                .exerciseCatalogHashCheckRequest,
+                try hash.dictionaryForm()
+            )
+            let rawInstruction = try instruction.dictionaryForm()
+            
+            sendInstantly(
+                rawInstruction,
+                replyHandler: { dictionary in
+                    print("WATCH RECEIVED REPLY DICTIONARY!!!")
+                    self.process(dictionary)
+                }
+            )
+            
+        } catch {
+            
+            print("ERROR")
+            
+        }
+    }
+    
     func requestAddCustomExerciseKind() throws {
         
         print("Requesting add custom exercise kind")

@@ -65,6 +65,8 @@ public final class Companion: NSObject, WCSessionDelegate {
     
     #if os(iOS)
     public var receiveAddCustomExerciseKindRequestAction: (() -> Void)?
+    
+    public var getExerciseCatalogDTO: (() -> Exercise.Catalog.DTO)?
     #elseif os(watchOS)
     public var editCatalog: ((Exercise.Catalog.DTO) -> Void)?
     #endif

@@ -120,6 +120,33 @@ public extension Companion {
     }
     
     @MainActor
+    func receiveExerciseCatalogHashCheckReply(_ payload: [String: Any]) {
+        
+        print("RECEIVED REPLY!!!")
+        
+        do {
+            
+            let syncStatus = try SyncStatus.ExerciseCatalog(fromDictionary: payload)
+            
+            switch syncStatus {
+                
+            case .matched:
+                print("Matched")
+                
+            case .notMatched(let catalogDTO):
+                print("Did not match")
+                editCatalog?(catalogDTO)
+                
+            }
+            
+        } catch {
+            
+            print("Failed to create workout from dicationary")
+            
+        }
+    }
+    
+    @MainActor
     func receiveEditedCatalogDTO(_ payload: [String: Any]) {
         
         do {
@@ -152,6 +179,9 @@ public extension Companion {
                 
             case .templateWorkoutsHashCheckReply:
                 self?.receiveTemplateWorkoutsHashCheckReply(syncInstruction.payload)
+                
+            case .exerciseCatalogHashCheckReply:
+                self?.receiveExerciseCatalogHashCheckReply(syncInstruction.payload)
                 
             case .editExerciseCatalog:
                 self?.receiveEditedCatalogDTO(syncInstruction.payload)
@@ -207,6 +237,42 @@ public extension Companion {
         }
     }
     
+    func receiveExerciseCatalogHashCheckRequest(
+        _ payload: [String: any Sendable]
+    ) -> [String: any Sendable] {
+        
+        print("Received check request!")
+        
+        do {
+            
+            let watchHash = try Exercise.Catalog.DTO.Hash(
+                fromDictionary: payload
+            )
+            guard let catalogDTO = getExerciseCatalogDTO?() else { return [:] }
+            
+            let syncStatus: SyncStatus.ExerciseCatalog
+            
+            if watchHash == catalogDTO.getHash() {
+                syncStatus = .matched
+            } else {
+                syncStatus = .notMatched(catalogDTO)
+            }
+            
+            let instruction = SyncInstruction(
+                .exerciseCatalogHashCheckReply,
+                try syncStatus.dictionaryForm()
+            )
+            let rawInstruction = try instruction.dictionaryForm()
+            
+            return rawInstruction as! [String: any Sendable]
+            
+        } catch {
+            
+            print("Failed to create workout from dicationary")
+            return [:]
+        }
+    }
+    
     func receiveAddCustomExerciseKindRequest() {
         
         receiveAddCustomExerciseKindRequestAction?()
@@ -227,6 +293,13 @@ public extension Companion {
             case .templateWorkoutsHashCheckRequest:
                 
                 let reply = self?.receiveTemplateWorkoutsHashCheckRequest(syncInstruction.payload)
+                if let reply {
+                    replyHandler(reply as [String: Any])
+                }
+                
+            case .exerciseCatalogHashCheckRequest:
+                
+                let reply = self?.receiveExerciseCatalogHashCheckRequest(syncInstruction.payload)
                 if let reply {
                     replyHandler(reply as [String: Any])
                 }
