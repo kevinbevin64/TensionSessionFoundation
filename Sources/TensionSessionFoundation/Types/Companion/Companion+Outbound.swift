@@ -152,11 +152,15 @@ public extension Companion {
         }
     }
     
-    func requestExerciseCatalogHashCheck(_ hash: Exercise.Catalog.DTO.Hash) {
+    func requestExerciseCatalogHashCheck() {
         
         print("Requesting exercise catalog hash check.")
         
         do {
+            
+            guard let hash = getExerciseCatalogDTO?().getHash() else {
+                return
+            }
             
             let instruction = SyncInstruction(
                 .exerciseCatalogHashCheckRequest,
