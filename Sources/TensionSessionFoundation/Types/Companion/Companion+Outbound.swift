@@ -96,6 +96,25 @@ public extension Companion {
             
         }
     }
+    
+    func editExerciseCatalog(_ catalog: Exercise.Catalog) {
+        
+        do {
+            
+            let instruction = SyncInstruction(
+                .editExerciseCatalog,
+                try catalog.dictionaryForm()
+            )
+            let rawInstruction = try instruction.dictionaryForm()
+            
+            send(rawInstruction)
+            
+        } catch {
+            
+            print("ERROR")
+            
+        }
+    }
 }
 #endif // os(iOS)
 

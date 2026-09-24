@@ -119,6 +119,21 @@ public extension Companion {
         }
     }
     
+    @MainActor
+    func receiveEditedCatalogDTO(_ payload: [String: Any]) {
+        
+        do {
+            
+            let catalogDTO = try Exercise.Catalog.DTO(fromDictionary: payload)
+            editCatalog?(catalogDTO)
+            
+        } catch {
+            
+            print("Failed to create workout from dicationary")
+
+        }
+    }
+    
     nonisolated
     func process(_ syncInstruction: SyncInstruction) {
         
@@ -137,6 +152,9 @@ public extension Companion {
                 
             case .templateWorkoutsHashCheckReply:
                 self?.receiveTemplateWorkoutsHashCheckReply(syncInstruction.payload)
+                
+            case .editExerciseCatalog:
+                self?.receiveEditedCatalogDTO(syncInstruction.payload)
                 
             default:
                 assertionFailure()

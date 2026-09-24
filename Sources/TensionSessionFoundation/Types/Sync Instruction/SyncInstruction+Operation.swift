@@ -16,6 +16,7 @@ extension SyncInstruction {
         case editTemplateWorkout
         case deleteTemplateWorkout
         case templateWorkoutsHashCheckReply
+        case editExerciseCatalog
         
         // watchOS -> iOS
         
