@@ -17,7 +17,10 @@ public final class RepDetector {
     
     private let counter: any RepCounter
 
-    public init?(counter: any RepCounter = GenericRepCounter(), setReps: @escaping (Int) -> Void) {
+    public init?(
+        counter: any RepCounter = GenericRepCounter(),
+        setReps: @escaping (Int) -> Void
+    ) {
         
         if !RepDetector.isSupported {
             return nil
@@ -31,8 +34,19 @@ public final class RepDetector {
 
         motionManager.deviceMotionUpdateInterval = Duration.milliseconds(20).timeInterval
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, error in
+            
             if let motion {
-                self?.record(motion)
+                
+                let acceleration = motion.userAcceleration
+                
+                self?.samples.append(
+                    MotionSample(
+                        timestamp: motion.timestamp,
+                        x: acceleration.x,
+                        y: acceleration.y,
+                        z: acceleration.z
+                    )
+                )
             }
         }
     }
@@ -43,19 +57,5 @@ public final class RepDetector {
         let reps = counter.getRepCount(in: samples)
         setReps(reps)
         samples.removeAll()
-    }
-
-    private func record(_ motion: CMDeviceMotion) {
-        
-        let acceleration = motion.userAcceleration
-
-        samples.append(
-            MotionSample(
-                timestamp: motion.timestamp,
-                x: acceleration.x,
-                y: acceleration.y,
-                z: acceleration.z
-            )
-        )
     }
 }

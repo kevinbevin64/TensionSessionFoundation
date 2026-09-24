@@ -10,6 +10,7 @@ import CoreMotion
 public extension RepDetector {
     
     static var isSupported: Bool {
+        
         CMMotionManager().isDeviceMotionAvailable
     }
 }

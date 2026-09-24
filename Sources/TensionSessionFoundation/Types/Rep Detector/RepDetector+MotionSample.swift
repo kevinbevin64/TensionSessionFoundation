@@ -7,9 +7,9 @@
 
 import Foundation
 
-extension RepDetector {
+public extension RepDetector {
 
-    public struct MotionSample {
+    struct MotionSample {
         
         let timestamp: TimeInterval
         let x: Double
