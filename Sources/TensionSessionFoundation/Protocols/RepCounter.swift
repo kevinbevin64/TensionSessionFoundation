@@ -7,5 +7,5 @@
 
 public protocol RepCounter {
     
-    static func getRepCount(in: [RepDetector.MotionSample]) -> Int
+    func getRepCount(in: [RepDetector.MotionSample]) -> Int
 }

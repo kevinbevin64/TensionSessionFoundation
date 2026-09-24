@@ -15,9 +15,9 @@ public final class RepDetector {
     
     private let setReps: (Int) -> Void
     
-    private let counter: (any RepCounter).Type
+    private let counter: any RepCounter
 
-    public init?(counter: (any RepCounter).Type = RepCounter1.self, setReps: @escaping (Int) -> Void) {
+    public init?(counter: any RepCounter = GenericRepCounter(), setReps: @escaping (Int) -> Void) {
         
         if !RepDetector.isSupported {
             return nil

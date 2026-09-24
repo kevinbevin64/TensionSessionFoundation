@@ -5,9 +5,11 @@
 //  Created by Kevin on 9/24/26.
 //
 
-extension RepDetector {
+import Foundation
 
-    public struct RepCounter1: RepCounter {
+public extension RepDetector {
+
+    struct GenericRepCounter: RepCounter {
 
         private struct FilteredSample {
             let timestamp: TimeInterval
@@ -30,7 +32,9 @@ extension RepDetector {
             static let maximumDuration: TimeInterval = 8
         }
 
-        public static func getRepCount(in samples: [MotionSample]) -> Int {
+        public init() {}
+
+        public func getRepCount(in samples: [MotionSample]) -> Int {
 
             guard samples.count > 1 else {
                 return 0
@@ -47,11 +51,11 @@ extension RepDetector {
             return cycles.filter { isRepetition($0) }.count
         }
 
-        private static func magnitude(of sample: MotionSample) -> Double {
+        private func magnitude(of sample: MotionSample) -> Double {
             (sample.x * sample.x + sample.y * sample.y + sample.z * sample.z).squareRoot()
         }
 
-        private static func filterSignal(_ samples: [MotionSample]) -> [FilteredSample] {
+        private func filterSignal(_ samples: [MotionSample]) -> [FilteredSample] {
 
             let magnitudes = samples.map { magnitude(of: $0) }
             let smoothed = movingAverage(magnitudes, window: Repetition.smoothingWindow)
@@ -61,7 +65,7 @@ extension RepDetector {
             }
         }
 
-        private static func movingAverage(_ values: [Double], window: Int) -> [Double] {
+        private func movingAverage(_ values: [Double], window: Int) -> [Double] {
 
             var smoothed: [Double] = []
             smoothed.reserveCapacity(values.count)
@@ -79,7 +83,7 @@ extension RepDetector {
             return smoothed
         }
 
-        private static func movementCycles(in signal: [FilteredSample]) -> [MovementCycle] {
+        private func movementCycles(in signal: [FilteredSample]) -> [MovementCycle] {
 
             var cycles: [MovementCycle] = []
             var cycleStart: TimeInterval?
@@ -111,7 +115,7 @@ extension RepDetector {
             return cycles
         }
 
-        private static func isRepetition(_ cycle: MovementCycle) -> Bool {
+        private func isRepetition(_ cycle: MovementCycle) -> Bool {
 
             let duration = cycle.end - cycle.start
             return cycle.peak >= Repetition.minimumPeak
