@@ -59,6 +59,8 @@ public final class Companion: NSObject, WCSessionDelegate {
     var timerTask: Task<Void, Never>?
     
     var timerAction: (@MainActor () -> Void)?
+    
+    var requestExerciseCatalogHashCheckSchedule: Schedule?
     #endif // os(watchOS)
     
     // MARK: Closures
