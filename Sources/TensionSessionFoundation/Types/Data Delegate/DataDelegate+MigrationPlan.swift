@@ -9,7 +9,7 @@ import SwiftData
 
 enum CurrentStore: VersionedSchema {
     
-    static var versionIdentifier = Schema.Version(2, 0, 0)
+    static let versionIdentifier = Schema.Version(2, 0, 0)
     
     static var models: [any PersistentModel.Type] {
         [

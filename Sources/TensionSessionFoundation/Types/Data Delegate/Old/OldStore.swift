@@ -8,13 +8,10 @@
 import Foundation
 import SwiftData
 
-/// Persistent models from GymCoach v1.1.0
-/// (`e626d9df765458e0109c9bb29307ffdddb6e1c62`).
+/// Persistent models from GymCoach v1.1.0.
 enum OldStore: VersionedSchema {
     
-    static let sourceRevision = "e626d9df765458e0109c9bb29307ffdddb6e1c62"
-    
-    static var versionIdentifier = Schema.Version(1, 1, 0)
+    static let versionIdentifier = Schema.Version(1, 1, 0)
     
     static var models: [any PersistentModel.Type] {
         [
