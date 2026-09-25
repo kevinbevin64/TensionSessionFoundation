@@ -106,6 +106,9 @@ final public class DataDelegate {
         companion = Companion()
         companion.userInfo = self.userInfo
         companion.workoutManager = self.workoutManager
+        companion.getExerciseCatalogDTO = {
+            return self.catalog.getDTO()
+        }
         companion.activate()
         
         // Savers
