@@ -109,6 +109,11 @@ final public class DataDelegate {
         companion.getExerciseCatalogDTO = {
             return self.catalog.getDTO()
         }
+        #if os(watchOS)
+        companion.editCatalog = { newCatalogDTO in
+            self.catalog.all = newCatalogDTO.all
+        }
+        #endif
         companion.activate()
         
         // Savers
