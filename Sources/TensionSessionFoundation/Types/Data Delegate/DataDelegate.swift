@@ -31,6 +31,7 @@ final public class DataDelegate {
                      Exercise.self,
                      UserInfo.self,
                      Exercise.Catalog.self,
+                migrationPlan: DataDelegateMigrationPlan.self,
                 configurations: .init(isStoredInMemoryOnly: isStoredInMemoryOnly)
             )
             context = container.mainContext
