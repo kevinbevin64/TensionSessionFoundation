@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 /// Persistent models from GymCoach v1.1.0.
-enum OldStore: VersionedSchema {
+nonisolated enum OldStore: VersionedSchema {
     
     static let versionIdentifier = Schema.Version(1, 1, 0)
     

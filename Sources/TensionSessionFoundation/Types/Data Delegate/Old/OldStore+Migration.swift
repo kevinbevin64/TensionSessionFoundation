@@ -7,27 +7,32 @@
 
 import Foundation
 import SwiftData
+import Synchronization
 
-enum OldStoreMigration {
+nonisolated enum OldStoreMigration {
     
-    nonisolated(unsafe) private static var workouts: [WorkoutSnapshot]?
+    private static let storedWorkouts = Mutex<[WorkoutSnapshot]?>(nil)
     
     static func prepare(_ context: ModelContext) throws {
         
-        workouts = try snapshot(from: context)
+        let snapshots = try snapshot(from: context)
+        storedWorkouts.withLock { $0 = snapshots }
         try deleteEverything(in: context)
         try context.save()
     }
     
     static func finish(_ context: ModelContext) throws {
         
-        let workouts = workouts ?? []
-        self.workouts = nil
+        let workouts = storedWorkouts.withLock { stored in
+            let workouts = stored ?? []
+            stored = nil
+            return workouts
+        }
         try apply(workouts, to: context)
         try context.save()
     }
     
-    private struct WorkoutSnapshot {
+    private struct WorkoutSnapshot: Sendable {
         
         var id: UUID
         
@@ -42,7 +47,7 @@ enum OldStoreMigration {
         var exercises: [ExerciseSnapshot]
     }
     
-    private struct ExerciseSnapshot {
+    private struct ExerciseSnapshot: Sendable {
         
         var id: UUID
         
