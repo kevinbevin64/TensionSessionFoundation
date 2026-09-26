@@ -172,7 +172,7 @@ nonisolated enum OldStoreMigration {
         
         context.insert(catalog)
         context.insert(manager)
-        context.insert(UserInfo())
+        context.insert(StoreV2.UserInfo())
     }
     
     private static func makeWorkout(
