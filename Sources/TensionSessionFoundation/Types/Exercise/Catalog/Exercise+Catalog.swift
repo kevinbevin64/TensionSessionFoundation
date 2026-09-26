@@ -150,7 +150,6 @@ extension Exercise {
             let ranked = kinds.compactMap { kind -> (kind: Kind, score: Int)? in
                 
                 let candidate = kind.name.lowercased()
-                guard candidate != query else { return nil }
                 
                 let source = Array(query)
                 let target = Array(candidate)
@@ -196,7 +195,9 @@ extension Exercise {
                 
                 var score = editDistance + firstMatchingLetterIndex
                 
-                if candidate.hasPrefix(query) || query.hasPrefix(candidate) {
+                if candidate == query {
+                    score = -1
+                } else if candidate.hasPrefix(query) || query.hasPrefix(candidate) {
                     score = firstMatchingLetterIndex
                 }
                 
