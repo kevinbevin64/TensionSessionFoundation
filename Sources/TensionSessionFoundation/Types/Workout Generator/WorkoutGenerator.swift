@@ -308,7 +308,7 @@ public final class WorkoutGenerator {
                 
                 exercises.append(Exercise(
                     id2: UUID(),
-                    order: i,
+                    order: exercises.count,
                     kind: kind,
                     equipment: equipment,
                     setsPlanned: generatedExercise.setsPlanned,
