@@ -25,5 +25,6 @@ extension SyncInstruction {
         case templateWorkoutsHashCheckRequest
         case exerciseCatalogHashCheckRequest
         case addCustomExerciseKindRequest
+        case internal_sendHistoricalWorkout
     }
 }
