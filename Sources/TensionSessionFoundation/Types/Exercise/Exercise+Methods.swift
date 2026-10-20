@@ -8,9 +8,18 @@
 @MainActor
 public extension Exercise {
     
-    func completeSet(repsDone: Int, weightUsed: Weight) {
-        
-        let newSet = SetDetail(repsDone: repsDone, weightUsed: weightUsed)
+    func completeSet(
+        repsDone: Int,
+        weightUsed: Weight,
+        motionSamples: [RepDetector.MotionSample]? = nil,
+        guessedRepCount: Int? = nil
+    ) {
+        let newSet = SetDetail(
+            repsDone: repsDone,
+            weightUsed: weightUsed,
+            motionSamples: motionSamples,
+            guessedRepCount: guessedRepCount
+        )
         self.setDetails.append(newSet)
     }
     
