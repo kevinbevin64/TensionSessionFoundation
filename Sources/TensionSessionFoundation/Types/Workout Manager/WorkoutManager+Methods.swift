@@ -236,3 +236,38 @@ extension WorkoutManager {
         try? save()
     }
 }
+
+// MARK: Internal experiment
+
+#if os(iOS)
+@MainActor
+public extension WorkoutManager {
+    
+    func addHistoricalWorkout(_ workout: Workout) {
+        
+        unsortedHistory.append(workout)
+        sortedHistory = unsortedHistory.sorted {
+            
+            guard let firstInstant = $0.startInstant,
+                  let secondInstant = $1.startInstant else {
+                assertionFailure()
+                return true
+            }
+            
+            return firstInstant > secondInstant
+        }
+        
+        try? save()
+    }
+    
+    func internal_historyJSON() -> String {
+        
+        let dtos = sortedHistory.map { $0.getDTO() }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        guard let data = try? encoder.encode(dtos) else { return "" }
+        
+        return String(decoding: data, as: UTF8.self)
+    }
+}
+#endif // os(iOS)
