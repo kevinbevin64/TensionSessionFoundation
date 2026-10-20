@@ -271,14 +271,19 @@ public final class WorkoutGenerator {
     private func workout(
         from generatedWorkout: GeneratedWorkout
     ) throws -> Workout {
-        
+
         var exercises = [Exercise]()
-        
+        var usedKindNames: Set<String> = []
+
         for (i, generatedExercise) in generatedWorkout.exercises.enumerated() {
             
             do {
                 
                 let kind = try catalog.existing(trimmedAndNeatened: generatedExercise.kind)
+
+                guard usedKindNames.contains(kind.name) == false else { continue }
+                usedKindNames.insert(kind.name)
+
                 let equipment: Exercise.Equipment = {
                     switch generatedExercise.equipment {
                     case .barbell: return .barbell
@@ -319,7 +324,7 @@ public final class WorkoutGenerator {
                 throw Error.decodingError(reason)
             }
         }
-        
+
         return Workout(
             id2: UUID(),
             order: 0,
