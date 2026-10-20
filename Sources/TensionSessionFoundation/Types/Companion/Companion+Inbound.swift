@@ -192,6 +192,20 @@ public extension Companion {
             }
         }
     }
+    
+    nonisolated
+    func session(
+        _ session: WCSession,
+        didFinish fileTransfer: WCSessionFileTransfer,
+        error: (any Swift.Error)?
+    ) {
+        
+        if let error {
+            print("Failed to transfer file: \(error.localizedDescription)")
+        }
+        
+        try? FileManager.default.removeItem(at: fileTransfer.file.fileURL)
+    }
 }
 #endif // os(watchOS)
 
@@ -276,6 +290,47 @@ public extension Companion {
     func receiveAddCustomExerciseKindRequest() {
         
         receiveAddCustomExerciseKindRequestAction?()
+    }
+    
+    func receiveHistoricalWorkout(_ data: Data) {
+        
+        do {
+            
+            let dto = try JSONDecoder().decode(Workout.DTO.self, from: data)
+            saveHistoricalWorkout?(Workout(fromDTO: dto))
+            
+        } catch {
+            
+            print("Failed to create historical workout from file: \(error.localizedDescription)")
+            
+        }
+    }
+    
+    nonisolated
+    func session(
+        _ session: WCSession,
+        didReceive file: WCSessionFile
+    ) {
+        
+        do {
+            
+            let instruction = try SyncInstruction(fromDictionary: file.metadata ?? [:])
+            guard instruction.operation == .internal_sendHistoricalWorkout else {
+                assertionFailure()
+                return
+            }
+            
+            let data = try Data(contentsOf: file.fileURL)
+            
+            DispatchQueue.main.async { [weak self] in
+                self?.receiveHistoricalWorkout(data)
+            }
+            
+        } catch {
+            
+            print("Failed to read received file: \(error.localizedDescription)")
+            
+        }
     }
     
     nonisolated
