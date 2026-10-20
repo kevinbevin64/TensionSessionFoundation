@@ -9,12 +9,13 @@ import Foundation
 
 public extension RepDetector {
 
-    struct MotionSample {
+    nonisolated
+    struct MotionSample: Codable, Sendable {
         
-        let timestamp: TimeInterval
-        let x: Double
-        let y: Double
-        let z: Double
+        public let timestamp: TimeInterval
+        public let x: Double
+        public let y: Double
+        public let z: Double
     }
 }
 

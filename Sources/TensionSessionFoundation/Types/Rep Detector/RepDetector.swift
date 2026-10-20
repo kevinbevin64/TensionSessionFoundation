@@ -13,13 +13,13 @@ public final class RepDetector {
 
     private var samples: [MotionSample] = []
     
-    private let setReps: (Int) -> Void
+    private let setReps: (Int, [MotionSample]) -> Void
     
     private let counter: any RepCounter
 
     public init?(
         counter: any RepCounter = GenericRepCounter(),
-        setReps: @escaping (Int) -> Void
+        setReps: @escaping (Int, [MotionSample]) -> Void
     ) {
         
         if !RepDetector.isSupported {
@@ -66,7 +66,7 @@ public final class RepDetector {
         
         motionManager.stopDeviceMotionUpdates()
         let reps = counter.getRepCount(in: samples)
-        setReps(reps)
+        setReps(reps, samples)
         samples.removeAll()
     }
 }

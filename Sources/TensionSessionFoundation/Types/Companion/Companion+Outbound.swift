@@ -214,5 +214,30 @@ public extension Companion {
             throw Error.failedAddCustomExerciseRequest
         }
     }
+    
+    func internal_sendHistoricalWorkout(_ workout: Workout) {
+        
+        do {
+            
+            let instruction = SyncInstruction(
+                operationOnly: .internal_sendHistoricalWorkout
+            )
+            let rawInstruction = try instruction.dictionaryForm()
+            
+            let data = try JSONEncoder().encode(workout.getDTO())
+            let fileURL = URL.temporaryDirectory.appending(path: "\(workout.id2.uuidString).json")
+            try data.write(to: fileURL)
+            
+            WCSession.default.transferFile(
+                fileURL,
+                metadata: rawInstruction
+            )
+            
+        } catch {
+            
+            print("Failed to send historical workout: \(error.localizedDescription)")
+            
+        }
+    }
 }
 #endif

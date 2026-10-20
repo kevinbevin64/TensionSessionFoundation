@@ -120,7 +120,11 @@ final public class DataDelegate {
         companion.getExerciseCatalogDTO = {
             return self.catalog.getDTO()
         }
-        #if os(watchOS)
+        #if os(iOS)
+        companion.saveHistoricalWorkout = { workout in
+            self.workoutManager.addHistoricalWorkout(workout)
+        }
+        #elseif os(watchOS)
         companion.editCatalog = { newCatalogDTO in
             self.catalog.all = newCatalogDTO.all
         }
