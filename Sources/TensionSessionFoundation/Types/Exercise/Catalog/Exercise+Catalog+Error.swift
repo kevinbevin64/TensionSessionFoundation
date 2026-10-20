@@ -5,7 +5,7 @@
 //  Created by Kevin on 9/17/26.
 //
 
-extension Exercise.Catalog {
+public extension Exercise.Catalog {
     
     enum Error: Swift.Error {
         
