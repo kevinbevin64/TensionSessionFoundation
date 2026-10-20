@@ -30,6 +30,11 @@ public final class RepDetector {
         self.setReps = setReps
     }
 
+    isolated deinit {
+
+        motionManager.stopDeviceMotionUpdates()
+    }
+
     public func start() {
 
         motionManager.deviceMotionUpdateInterval = Duration.milliseconds(20).timeInterval
