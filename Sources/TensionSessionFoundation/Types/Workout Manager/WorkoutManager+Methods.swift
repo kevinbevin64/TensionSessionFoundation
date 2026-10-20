@@ -60,16 +60,6 @@ public extension WorkoutManager {
         assert(templateBuffer.isReadyToEvictFinishedWorkout)
         
         unsortedHistory.append(workout)
-        sortedHistory = unsortedHistory.sorted {
-            
-            guard let firstInstant = $0.startInstant,
-                  let secondInstant = $1.startInstant else {
-                assertionFailure()
-                return true
-            }
-            
-            return firstInstant > secondInstant
-        }
         
         if let freshTemplate = freshTemplate() {
             templateBuffer.insert(freshTemplate)
@@ -246,16 +236,6 @@ public extension WorkoutManager {
     func addHistoricalWorkout(_ workout: Workout) {
         
         unsortedHistory.append(workout)
-        sortedHistory = unsortedHistory.sorted {
-            
-            guard let firstInstant = $0.startInstant,
-                  let secondInstant = $1.startInstant else {
-                assertionFailure()
-                return true
-            }
-            
-            return firstInstant > secondInstant
-        }
         
         try? save()
     }

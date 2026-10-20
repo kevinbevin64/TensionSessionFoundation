@@ -15,26 +15,26 @@ public final class WorkoutManager {
     public var sortedTemplates: [Workout] {
         unsortedTemplates.sorted { $0.order < $1.order }
     }
-    
+
     @Transient
-    public lazy var sortedHistory: [Workout] = {
-        return unsortedHistory.sorted {
-            
+    public var sortedHistory: [Workout] {
+        unsortedHistory.sorted {
+
             guard let firstInstant = $0.startInstant,
                   let secondInstant = $1.startInstant else {
                 assertionFailure()
                 return true
             }
-            
+
             return firstInstant > secondInstant
         }
-    }()
+    }
     
     @Relationship(deleteRule: .cascade)
     public var unsortedTemplates: [Workout]
     
     @Relationship(deleteRule: .cascade)
-    var unsortedHistory: [Workout]
+    public var unsortedHistory: [Workout]
     
     @Transient
     var save: () throws -> Void = {}
