@@ -249,5 +249,15 @@ public extension WorkoutManager {
         
         return String(decoding: data, as: UTF8.self)
     }
+    
+    func internal_clearHistory() {
+        
+        for workout in unsortedHistory {
+            modelContext?.delete(workout)
+        }
+        unsortedHistory.removeAll()
+        
+        try? save()
+    }
 }
 #endif // os(iOS)
