@@ -5,22 +5,12 @@
 //  Created by Kevin Chen on 9/4/26.
 //
 
+import Foundation
 import WatchConnectivity
 
 // MARK: Both iOS and watchOS
 
 public extension Companion {
-    
-    nonisolated
-    func process(_ dictionary: [String: Any]) {
-        
-        do {
-            let instruction = try SyncInstruction(fromDictionary: dictionary)
-            process(instruction)
-        } catch {
-            print("Failed to create instruction")
-        }
-    }
     
     nonisolated
     func session(
@@ -42,154 +32,126 @@ public extension Companion {
     }
 }
 
-// MARK: watchOS
-
-#if os(watchOS)
-public extension Companion {
-    
-    @MainActor
-    func receiveNewTemplate(_ payload: [String: Any]) {
-        
-        do {
-            
-            let newTemplate = try Workout(fromDictionary: payload)
-            workoutManager?.addWorkout(newTemplate)
-            
-        } catch {
-            
-            print("Failed to create workout from dicationary")
-            
-        }
-    }
-    
-    @MainActor
-    func receiveEditedTemplate(_ payload: [String: Any]) {
-        
-        do {
-            
-            let newTemplate = try Workout(fromDictionary: payload)
-            workoutManager?.editTemplate(accordingTo: newTemplate)
-            
-        } catch {
-            
-            print("Failed to create workout from dicationary")
-            
-        }
-    }
-    
-    @MainActor
-    func receiveTemplateToBeDeleted(_ payload: [String: Any]) {
-        
-        do {
-            
-            let workout = try Workout(fromDictionary: payload)
-            workoutManager?.deleteTemplate(workout)
-            
-        } catch {
-            
-            print("Failed to create workout from dicationary")
-            
-        }
-    }
-    
-    @MainActor
-    func receiveTemplateWorkoutsHashCheckReply(_ payload: [String: Any]) {
-        
-        print("RECEIVED REPLY!!!")
-        
-        do {
-            
-            let syncStatus = try SyncStatus.TemplateWorkouts(fromDictionary: payload)
-            
-            switch syncStatus {
-                
-            case .matched:
-                print("Matched")
-                
-            case .notMatched(let workouts):
-                print("Did not match")
-                workoutManager?.overwriteTemplates(workouts.map { Workout(fromDTO: $0) })
-                
-            }
-            
-        } catch {
-            
-            print("Failed to create workout from dicationary")
-            
-        }
-    }
-    
-    @MainActor
-    func receiveExerciseCatalogHashCheckReply(_ payload: [String: Any]) {
-        
-        print("RECEIVED REPLY!!!")
-        
-        do {
-            
-            let syncStatus = try SyncStatus.ExerciseCatalog(fromDictionary: payload)
-            
-            switch syncStatus {
-                
-            case .matched:
-                print("Matched")
-                
-            case .notMatched(let catalogDTO):
-                print("Did not match")
-                editCatalog?(catalogDTO)
-                
-            }
-            
-        } catch {
-            
-            print("Failed to create workout from dicationary")
-            
-        }
-    }
-    
-    @MainActor
-    func receiveEditedCatalogDTO(_ payload: [String: Any]) {
-        
-        do {
-            
-            let catalogDTO = try Exercise.Catalog.DTO(fromDictionary: payload)
-            editCatalog?(catalogDTO)
-            
-        } catch {
-            
-            print("Failed to create workout from dicationary")
-
-        }
-    }
+extension Companion {
     
     nonisolated
-    func process(_ syncInstruction: SyncInstruction) {
+    func process(
+        _ dictionary: [String: Any],
+        replyHandler: (([String: Any]) -> Void)? = nil
+    ) {
+
+        nonisolated(unsafe) let dictionary = dictionary
+        nonisolated(unsafe) let replyHandler = replyHandler
         
         DispatchQueue.main.async { [weak self] in
             
-            switch syncInstruction.operation {
-            
-            case .addTemplateWorkout:
-                self?.receiveNewTemplate(syncInstruction.payload)
+            do {
                 
-            case .editTemplateWorkout:
-                self?.receiveEditedTemplate(syncInstruction.payload)
+                let instruction = try SyncInstruction(fromDictionary: dictionary)
                 
-            case .deleteTemplateWorkout:
-                self?.receiveTemplateToBeDeleted(syncInstruction.payload)
+                guard let operation = instruction.inbound else {
+                    assertionFailure()
+                    return
+                }
                 
-            case .templateWorkoutsHashCheckReply:
-                self?.receiveTemplateWorkoutsHashCheckReply(syncInstruction.payload)
+                #if os(iOS)
+                self?.process(operation, replyHandler: replyHandler)
+                #elseif os(watchOS)
+                self?.process(operation)
+                #endif
                 
-            case .exerciseCatalogHashCheckReply:
-                self?.receiveExerciseCatalogHashCheckReply(syncInstruction.payload)
+            } catch {
                 
-            case .editExerciseCatalog:
-                self?.receiveEditedCatalogDTO(syncInstruction.payload)
-                
-            default:
-                assertionFailure()
+                print("Failed to create instruction")
                 
             }
+        }
+    }
+}
+
+// MARK: watchOS
+
+#if os(watchOS)
+extension Companion {
+    
+    func receiveNewTemplate(_ workout: Workout.DTO) {
+        
+        workoutManager?.addWorkout(Workout(fromDTO: workout))
+    }
+    
+    func receiveEditedTemplate(_ workout: Workout.DTO) {
+        
+        workoutManager?.editTemplate(accordingTo: Workout(fromDTO: workout))
+    }
+    
+    func receiveTemplateToBeDeleted(_ id2: UUID) {
+        
+        guard let workout = workoutManager?.unsortedTemplates.first(where: { $0.id2 == id2 }) else {
+            return
+        }
+        
+        workoutManager?.deleteTemplate(workout)
+    }
+    
+    func receiveTemplateWorkoutsHashCheckReply(_ syncStatus: SyncStatus.TemplateWorkouts) {
+        
+        print("RECEIVED REPLY!!!")
+        
+        switch syncStatus {
+            
+        case .matched:
+            print("Matched")
+            
+        case .notMatched(let workouts):
+            print("Did not match")
+            workoutManager?.overwriteTemplates(workouts.map { Workout(fromDTO: $0) })
+            
+        }
+    }
+    
+    func receiveExerciseCatalogHashCheckReply(_ syncStatus: SyncStatus.ExerciseCatalog) {
+        
+        print("RECEIVED REPLY!!!")
+        
+        switch syncStatus {
+            
+        case .matched:
+            print("Matched")
+            
+        case .notMatched(let catalogDTO):
+            print("Did not match")
+            editCatalog?(catalogDTO)
+            
+        }
+    }
+    
+    func receiveEditedCatalogDTO(_ catalogDTO: Exercise.Catalog.DTO) {
+        
+        editCatalog?(catalogDTO)
+    }
+    
+    func process(_ operation: SyncInstruction.Inbound) {
+        
+        switch operation {
+        
+        case .addTemplateWorkout(let workout):
+            receiveNewTemplate(workout)
+            
+        case .editTemplateWorkout(let workout):
+            receiveEditedTemplate(workout)
+            
+        case .deleteTemplateWorkout(let id2):
+            receiveTemplateToBeDeleted(id2)
+            
+        case .templateWorkoutsHashCheckReply(let status):
+            receiveTemplateWorkoutsHashCheckReply(status)
+            
+        case .exerciseCatalogHashCheckReply(let status):
+            receiveExerciseCatalogHashCheckReply(status)
+            
+        case .editExerciseCatalog(let catalog):
+            receiveEditedCatalogDTO(catalog)
+            
         }
     }
 }
@@ -199,149 +161,6 @@ public extension Companion {
 
 #if os(iOS)
 public extension Companion {
-    
-    func receiveTemplateWorkoutsHashCheckRequest(
-        _ payload: [String: any Sendable]
-    ) -> [String: any Sendable] {
-        
-        print("Received check request!")
-        
-        do {
-            
-            let watchHash = try WorkoutManager.TemplateWorkoutsHash(
-                fromDictionary: payload
-            )
-            guard let phoneHash = workoutManager?.getTemplateWorkoutsHash() else { return [:] } // FIXME:
-            
-            let syncStatus: SyncStatus.TemplateWorkouts
-            
-            if watchHash == phoneHash {
-                syncStatus = .matched
-            } else {
-                let templateDTOs = workoutManager?.sortedTemplates.map { $0.getDTO() }
-                syncStatus = .notMatched(templateDTOs ?? [])
-            }
-            
-            let instruction = SyncInstruction(
-                .templateWorkoutsHashCheckReply,
-                try syncStatus.dictionaryForm()
-            )
-            let rawInstruction = try instruction.dictionaryForm()
-            
-            return rawInstruction as! [String: any Sendable]
-            
-        } catch {
-            
-            print("Failed to create workout from dicationary")
-            return [:]
-        }
-    }
-    
-    func receiveExerciseCatalogHashCheckRequest(
-        _ payload: [String: any Sendable]
-    ) -> [String: any Sendable] {
-        
-        print("Received check request!")
-        
-        do {
-            
-            let watchHash = try Exercise.Catalog.DTO.Hash(
-                fromDictionary: payload
-            )
-            guard let catalogDTO = getExerciseCatalogDTO?() else { return [:] }
-            
-            let syncStatus: SyncStatus.ExerciseCatalog
-            
-            if watchHash == catalogDTO.getHash() {
-                syncStatus = .matched
-            } else {
-                syncStatus = .notMatched(catalogDTO)
-            }
-            
-            let instruction = SyncInstruction(
-                .exerciseCatalogHashCheckReply,
-                try syncStatus.dictionaryForm()
-            )
-            let rawInstruction = try instruction.dictionaryForm()
-            
-            return rawInstruction as! [String: any Sendable]
-            
-        } catch {
-            
-            print("Failed to create workout from dicationary")
-            return [:]
-        }
-    }
-    
-    func receiveAddCustomExerciseKindRequest() {
-        
-        receiveAddCustomExerciseKindRequestAction?()
-    }
-    
-    nonisolated
-    func process(
-        _ syncInstruction: SyncInstruction,
-        replyHandler: @escaping ([String: Any]) -> Void
-    ) {
-
-        nonisolated(unsafe) let replyHandler = replyHandler
-        
-        DispatchQueue.main.async { [weak self] in
-            
-            switch syncInstruction.operation {
-                
-            case .templateWorkoutsHashCheckRequest:
-                
-                let reply = self?.receiveTemplateWorkoutsHashCheckRequest(syncInstruction.payload)
-                if let reply {
-                    replyHandler(reply as [String: Any])
-                }
-                
-            case .exerciseCatalogHashCheckRequest:
-                
-                let reply = self?.receiveExerciseCatalogHashCheckRequest(syncInstruction.payload)
-                if let reply {
-                    replyHandler(reply as [String: Any])
-                }
-                
-            default:
-                assertionFailure()
-            }
-        }
-    }
-    
-    nonisolated
-    func process(
-        _ syncInstruction: SyncInstruction
-    ) {
-        
-        DispatchQueue.main.async { [weak self] in
-            
-            switch syncInstruction.operation {
-            
-            case .addCustomExerciseKindRequest:
-                print("RECEIVED REQUEST")
-                self?.receiveAddCustomExerciseKindRequest()
-
-            default:
-                assertionFailure()
-            }
-        }
-    }
-    
-    nonisolated
-    func process(
-        _ dictionary: [String: Any],
-        replyHandler: @escaping ([String: Any]) -> Void
-    ) {
-        
-        do {
-            let instruction = try SyncInstruction(fromDictionary: dictionary)
-            process(instruction, replyHandler: replyHandler)
-        } catch {
-            print("Failed to create instruction")
-        }
-    }
     
     nonisolated
     func session(
@@ -355,4 +174,89 @@ public extension Companion {
         process(message, replyHandler: replyHandler)
     }
 }
-#endif
+
+extension Companion {
+    
+    func receiveTemplateWorkoutsHashCheckRequest(
+        _ watchHash: WorkoutManager.TemplateWorkoutsHash
+    ) -> [String: Any] {
+        
+        print("Received check request!")
+        
+        do {
+            
+            guard let phoneHash = workoutManager?.getTemplateWorkoutsHash() else { return [:] } // FIXME:
+            
+            let syncStatus: SyncStatus.TemplateWorkouts
+            
+            if watchHash == phoneHash {
+                syncStatus = .matched
+            } else {
+                let templateDTOs = workoutManager?.sortedTemplates.map { $0.getDTO() }
+                syncStatus = .notMatched(templateDTOs ?? [])
+            }
+            
+            let instruction = SyncInstruction(
+                .templateWorkoutsHashCheckReply(status: syncStatus)
+            )
+            
+            return try instruction.dictionaryForm()
+            
+        } catch {
+            
+            print("Failed to create instruction dictionary")
+            return [:]
+        }
+    }
+    
+    func receiveExerciseCatalogHashCheckRequest(
+        _ watchHash: Exercise.Catalog.DTO.Hash
+    ) -> [String: Any] {
+        
+        print("Received check request!")
+        
+        do {
+            
+            guard let catalogDTO = getExerciseCatalogDTO?() else { return [:] }
+            
+            let syncStatus: SyncStatus.ExerciseCatalog
+            
+            if watchHash == catalogDTO.getHash() {
+                syncStatus = .matched
+            } else {
+                syncStatus = .notMatched(catalogDTO)
+            }
+            
+            let instruction = SyncInstruction(
+                .exerciseCatalogHashCheckReply(status: syncStatus)
+            )
+            
+            return try instruction.dictionaryForm()
+            
+        } catch {
+            
+            print("Failed to create instruction dictionary")
+            return [:]
+        }
+    }
+    
+    func process(
+        _ operation: SyncInstruction.Inbound,
+        replyHandler: (([String: Any]) -> Void)?
+    ) {
+        
+        switch operation {
+            
+        case .addHistoricalWorkout:
+            assertionFailure()
+            
+        case .templateWorkoutsHashCheckRequest(let hash):
+            replyHandler?(receiveTemplateWorkoutsHashCheckRequest(hash))
+            
+        case .exerciseCatalogHashCheckRequest(let hash):
+            replyHandler?(receiveExerciseCatalogHashCheckRequest(hash))
+            
+        }
+    }
+}
+#endif // os(iOS)

@@ -45,8 +45,7 @@ public extension Companion {
         do {
             
             let instruction = SyncInstruction(
-                .addTemplateWorkout,
-                try workout.dictionaryForm()
+                .addTemplateWorkout(workout: workout.getDTO())
             )
             let rawInstruction = try instruction.dictionaryForm()
             
@@ -64,8 +63,7 @@ public extension Companion {
         do {
             
             let instruction = SyncInstruction(
-                .editTemplateWorkout,
-                try workout.dictionaryForm()
+                .editTemplateWorkout(workout: workout.getDTO())
             )
             let rawInstruction = try instruction.dictionaryForm()
             
@@ -83,8 +81,7 @@ public extension Companion {
         do {
             
             let instruction = SyncInstruction(
-                .deleteTemplateWorkout,
-                try workout.dictionaryForm()
+                .deleteTemplateWorkout(id2: workout.id2)
             )
             let rawInstruction = try instruction.dictionaryForm()
             
@@ -102,8 +99,7 @@ public extension Companion {
         do {
             
             let instruction = SyncInstruction(
-                .editExerciseCatalog,
-                try catalog.dictionaryForm()
+                .editExerciseCatalog(catalog: catalog.getDTO())
             )
             let rawInstruction = try instruction.dictionaryForm()
             
@@ -132,8 +128,7 @@ public extension Companion {
             }
             
             let instruction = SyncInstruction(
-                .templateWorkoutsHashCheckRequest,
-                try hash.dictionaryForm()
+                .templateWorkoutsHashCheckRequest(hash: hash)
             )
             let rawInstruction = try instruction.dictionaryForm()
             
@@ -163,8 +158,7 @@ public extension Companion {
             }
             
             let instruction = SyncInstruction(
-                .exerciseCatalogHashCheckRequest,
-                try hash.dictionaryForm()
+                .exerciseCatalogHashCheckRequest(hash: hash)
             )
             let rawInstruction = try instruction.dictionaryForm()
             
@@ -180,38 +174,6 @@ public extension Companion {
             
             print("ERROR")
             
-        }
-    }
-    
-    func requestAddCustomExerciseKind() throws {
-        
-        print("Requesting add custom exercise kind")
-        
-        do {
-            
-            let instruction = SyncInstruction(
-                operationOnly: .addCustomExerciseKindRequest
-            )
-            let rawInstruction = try instruction.dictionaryForm()
-            
-            var instantSendFailed: Bool = false
-            
-            sendInstantly(
-                rawInstruction,
-                errorHandler: { error in
-                    instantSendFailed = true
-                }
-            )
-            
-            if instantSendFailed {
-                throw Error.failedAddCustomExerciseRequest
-            }
-            
-        } catch {
-            
-            print("Error: \(error.localizedDescription)")
-            
-            throw Error.failedAddCustomExerciseRequest
         }
     }
 }
