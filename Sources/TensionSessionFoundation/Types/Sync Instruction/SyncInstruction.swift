@@ -5,30 +5,16 @@
 //  Created by Kevin Chen on 8/27/26.
 //
 
-import SwiftData
-
-nonisolated
-public struct SyncInstruction: Sendable {
+public struct SyncInstruction: Codable {
     
     var operation: Operation
     
-    var payload: [String: any Sendable]
-    
-    nonisolated
-    init(operationOnly operation: Operation) {
-        self.operation = operation
-        self.payload = [:]
-    }
-    
-    nonisolated
-    init(operation: Operation, payload: [String: Any]) {
-        self.operation = operation
-        self.payload = payload as! [String: any Sendable]
-    }
-    
-    nonisolated
-    init(_ operation: Operation, _ payload: [String: Any]) {
-        self.operation = operation
-        self.payload = payload as! [String: any Sendable]
+    init(_ operation: Outbound) {
+        
+        #if os(iOS)
+        self.operation = .phoneToWatch(operation)
+        #elseif os(watchOS)
+        self.operation = .watchToPhone(operation)
+        #endif
     }
 }
