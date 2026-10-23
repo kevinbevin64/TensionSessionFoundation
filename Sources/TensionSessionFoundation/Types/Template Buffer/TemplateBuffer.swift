@@ -49,6 +49,7 @@ public extension TemplateBuffer {
         
         assert(template.state == .unstarted)
         assert(template.startInstant == nil)
+        assert(lastSetCompletion == nil)
         if let selection {
             assert(selection.state == .unstarted || selection.state == .ended)
         }
@@ -72,6 +73,8 @@ public extension TemplateBuffer {
     }
     
     func start() {
+        
+        assert(lastSetCompletion == nil)
         
         guard let selection else {
             assertionFailure()
@@ -129,6 +132,8 @@ public extension TemplateBuffer {
             return
         }
         
+        lastSetCompletion = nil
+        
         selection.end()
         
         healthKitManager.end()
@@ -148,7 +153,7 @@ public extension TemplateBuffer {
         selection.deleteExercise(withId2: id2)
     }
 
-    func completeSet(exercise: Exercise) {
+    func updateLastSetCompletion(for exercise: Exercise) {
         
         lastSetCompletion = LastSetCompletion(
             exercise: exercise,
@@ -156,8 +161,14 @@ public extension TemplateBuffer {
         )
     }
     
-    func clearLastSetCompletion() {
+    func retrieveLastSetCompletion(for exercise: Exercise) -> LastSetCompletion? {
         
-        lastSetCompletion = nil
+        guard let lastSetCompletion,
+              lastSetCompletion.exercise.id2 == exercise.id2 else {
+            return nil
+        }
+        
+        self.lastSetCompletion = nil
+        return lastSetCompletion
     }
 }
