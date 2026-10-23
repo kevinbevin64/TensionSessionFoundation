@@ -133,7 +133,21 @@ public extension TemplateBuffer {
         
         healthKitManager.end()
     }
-    
+
+    func deleteExercise(withId2 id2: UUID) {
+
+        guard let selection else {
+            assertionFailure()
+            return
+        }
+
+        if lastSetCompletion?.exercise.id2 == id2 {
+            lastSetCompletion = nil
+        }
+
+        selection.deleteExercise(withId2: id2)
+    }
+
     func completeSet(exercise: Exercise, lastSetCompletionInstant: Date) {
         
         lastSetCompletion = LastSetCompletion(
