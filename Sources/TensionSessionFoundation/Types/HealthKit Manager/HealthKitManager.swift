@@ -86,12 +86,16 @@ class HKWorkoutManager: NSObject {
     }
     
     func end() {
+        guard let session = session else { return }
+
+        // Saving continues once the session reports that it has stopped
+        session.stopActivity(with: Date.now)
+    }
+
+    private func finishWorkout(at endDate: Date) {
         guard let session = session, let builder = builder else { return }
-        
+
         Task {
-            let endDate = Date.now
-            session.end()
-            
             do {
                 try await builder.endCollection(at: endDate)
                 _ = try await builder.finishWorkout()
@@ -99,8 +103,8 @@ class HKWorkoutManager: NSObject {
             } catch {
                 print("Failed to gracefully close or save workout: \(error.localizedDescription)")
             }
-            
-            resetSession()
+
+            session.end()
         }
     }
     
@@ -117,10 +121,15 @@ extension HKWorkoutManager: HKWorkoutSessionDelegate {
     nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didChangeTo toState: HKWorkoutSessionState, from fromState: HKWorkoutSessionState, date: Date) {
         print("HKWorkoutSession changed state: \(toState.rawValue)")
         
-        if toState == .ended {
-            // 2. Hop back to the MainActor safely to update properties
-            Task { @MainActor in
+        // 2. Hop back to the MainActor safely to update properties
+        Task { @MainActor in
+            switch toState {
+            case .stopped:
+                self.finishWorkout(at: date)
+            case .ended:
                 self.resetSession()
+            default:
+                break
             }
         }
     }
