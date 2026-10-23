@@ -161,7 +161,7 @@ public extension TemplateBuffer {
         )
     }
     
-    func retrieveLastSetCompletion(for exercise: Exercise) -> LastSetCompletion? {
+    func getAndClearLastSetCompletion(for exercise: Exercise) -> LastSetCompletion? {
         
         guard let lastSetCompletion,
               lastSetCompletion.exercise.id2 == exercise.id2 else {
