@@ -5,32 +5,33 @@
 //  Created by Kevin Chen on 9/1/26.
 //
 
-//
-//  HealthKitManager.swift
-//  TensionSession
-//
-//  Created by Kevin Chen on 9/1/26.
-//
-
 import Foundation
 import HealthKit
 import Observation
 
 @Observable
 @MainActor
-class HKWorkoutManager: NSObject {
+public final class HKWorkoutManager: NSObject {
     
-    static let shared = HKWorkoutManager()
+    public private(set) var stage: Stage = .idle
     
     private let healthStore = HKHealthStore()
+    
     private var session: HKWorkoutSession?
+    
     private var builder: HKLiveWorkoutBuilder?
     
-    private static let shareTypes: Set = [
-        HKQuantityType.workoutType(),
-        HKQuantityType(.activeEnergyBurned),
-        HKQuantityType(.heartRate)
-    ]
+    // What the caller last asked for. The session is moved toward it whenever its state changes.
+    private var target: Target = .ended
+    
+    private enum Target {
+        
+        case running
+        
+        case paused
+        
+        case ended
+    }
     
     private static let workoutConfiguration: HKWorkoutConfiguration = {
         let configuration = HKWorkoutConfiguration()
@@ -40,106 +41,162 @@ class HKWorkoutManager: NSObject {
     }()
     
     override init() {
+        
         super.init()
     }
     
+    // MARK: Controls
+    
     func start() {
-        guard HKHealthStore.isHealthDataAvailable() else { return }
         
-        // Ensure no active session exists before initializing
-        guard session == nil && builder == nil else { return }
+        switch stage {
+        case .idle, .errored: break
+        default: return
+        }
+        
+        target = .running
+        stage = .starting
         
         Task {
             do {
-                // 1. Request Authorization
-                try await healthStore.requestAuthorization(toShare: Self.shareTypes, read: [])
+                try await Self.requestAuthorization()
+                guard Self.workoutAuthorization == .allowed else { throw Error.notAuthorized }
                 
-                // 2. Initialize Session and Builder
-                let newSession = try HKWorkoutSession(healthStore: healthStore, configuration: Self.workoutConfiguration)
+                guard target != .ended else {
+                    stage = .idle
+                    return
+                }
+                
+                let newSession = try HKWorkoutSession(
+                    healthStore: healthStore,
+                    configuration: Self.workoutConfiguration
+                )
                 let newBuilder = newSession.associatedWorkoutBuilder()
-                
                 newSession.delegate = self
                 newBuilder.delegate = self
-                newBuilder.dataSource = HKLiveWorkoutDataSource(healthStore: healthStore, workoutConfiguration: Self.workoutConfiguration)
+                newBuilder.dataSource = HKLiveWorkoutDataSource(
+                    healthStore: healthStore,
+                    workoutConfiguration: Self.workoutConfiguration
+                )
+                session = newSession
+                builder = newBuilder
                 
-                self.session = newSession
-                self.builder = newBuilder
-                
-                // 3. Start Data Collection
                 let startDate = Date.now
                 newSession.startActivity(with: startDate)
                 try await newBuilder.beginCollection(at: startDate)
-                
+            } catch let error as Error {
+                fail(with: error)
             } catch {
-                print("Failed to start workout session: \(error.localizedDescription)")
-                resetSession()
+                fail(with: .failedToStart(error.localizedDescription))
             }
         }
     }
     
     func pause() {
-        session?.pause()
+        
+        guard target == .running else { return }
+        target = .paused
+        moveTowardTarget()
     }
     
     func resume() {
-        session?.resume()
+        
+        guard target == .paused else { return }
+        target = .running
+        moveTowardTarget()
     }
     
     func end() {
-        guard let session = session, let builder = builder else { return }
+        
+        guard target != .ended else { return }
+        target = .ended
+        moveTowardTarget()
+    }
+    
+    private func moveTowardTarget() {
+        
+        guard let session else { return }
+        
+        switch (stage, target) {
+        case (.running, .paused):
+            session.pause()
+        case (.paused, .running):
+            session.resume()
+        case (.running, .ended), (.paused, .ended):
+            stage = .stopping
+            session.stopActivity(with: Date.now)
+        default:
+            break
+        }
+    }
+    
+    // MARK: Session events
+    
+    func sessionDidChange(
+        _ sessionID: ObjectIdentifier,
+        to state: HKWorkoutSessionState,
+        at date: Date
+    ) {
+        guard isCurrentSession(sessionID) else { return }
+        
+        switch state {
+        case .running:
+            stage = .running
+            moveTowardTarget()
+        case .paused:
+            stage = .paused
+            moveTowardTarget()
+        case .stopped:
+            finishWorkout(at: date)
+        case .ended:
+            resetSession()
+            if case .errored = stage { return }
+            stage = .idle
+        default:
+            break
+        }
+    }
+    
+    func sessionDidFail(_ sessionID: ObjectIdentifier, withDescription description: String) {
+        
+        guard isCurrentSession(sessionID) else { return }
+        fail(with: .sessionFailed(description))
+    }
+    
+    private func isCurrentSession(_ sessionID: ObjectIdentifier) -> Bool {
+        
+        guard let session else { return false }
+        return ObjectIdentifier(session) == sessionID
+    }
+    
+    // Saving follows Apple's order: stop, finish collecting, save, then end the session
+    private func finishWorkout(at endDate: Date) {
+        
+        guard let session, let builder else { return }
         
         Task {
-            let endDate = Date.now
-            session.end()
-            
             do {
                 try await builder.endCollection(at: endDate)
                 _ = try await builder.finishWorkout()
-                print("Successfully saved workout to HealthKit.")
             } catch {
-                print("Failed to gracefully close or save workout: \(error.localizedDescription)")
+                stage = .errored(.failedToSave(error.localizedDescription))
             }
             
-            resetSession()
+            session.end()
         }
+    }
+    
+    private func fail(with error: Error) {
+        
+        session?.end()
+        resetSession()
+        target = .ended
+        stage = .errored(error)
     }
     
     private func resetSession() {
-        self.session = nil
-        self.builder = nil
-    }
-}
-
-// MARK: - HKWorkoutSessionDelegate
-extension HKWorkoutManager: HKWorkoutSessionDelegate {
-    
-    // 1. Mark nonisolated so HealthKit's background thread can enter without crashing
-    nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didChangeTo toState: HKWorkoutSessionState, from fromState: HKWorkoutSessionState, date: Date) {
-        print("HKWorkoutSession changed state: \(toState.rawValue)")
         
-        if toState == .ended {
-            // 2. Hop back to the MainActor safely to update properties
-            Task { @MainActor in
-                self.resetSession()
-            }
-        }
+        session = nil
+        builder = nil
     }
-    
-    // 1. Mark nonisolated here too
-    nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {
-        print("HKWorkoutSession failed with error: \(error.localizedDescription)")
-        
-        // 2. Hop back to the MainActor safely
-        Task { @MainActor in
-            self.resetSession()
-        }
-    }
-}
-
-// MARK: - HKLiveWorkoutBuilderDelegate
-extension HKWorkoutManager: HKLiveWorkoutBuilderDelegate {
-    // 1. Mark nonisolated to handle events arriving on HealthKit's background queue
-    nonisolated func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {}
-    
-    nonisolated func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {}
 }
