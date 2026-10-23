@@ -66,8 +66,8 @@ public extension TemplateBuffer {
             )
         }
         
-        selection = nil
         lastSetCompletion = nil
+        selection = nil
         onEmptying()
     }
     
@@ -148,11 +148,11 @@ public extension TemplateBuffer {
         selection.deleteExercise(withId2: id2)
     }
 
-    func completeSet(exercise: Exercise, lastSetCompletionInstant: Date) {
+    func completeSet(exercise: Exercise) {
         
         lastSetCompletion = LastSetCompletion(
             exercise: exercise,
-            lastSetCompletionInstant: lastSetCompletionInstant
+            lastSetCompletionInstant: Date.now
         )
     }
     
