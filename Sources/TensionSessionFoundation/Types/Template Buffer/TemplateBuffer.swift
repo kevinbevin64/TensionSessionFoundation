@@ -12,6 +12,8 @@ final public class TemplateBuffer {
     
     public private(set) var selection: Workout?
     
+    public private(set) var lastSetCompletion: LastSetCompletion?
+    
     private var healthKitManager: HKWorkoutManager
     
     var onInsertion: (UUID) -> Void
@@ -47,6 +49,7 @@ public extension TemplateBuffer {
         
         assert(template.state == .unstarted)
         assert(template.startInstant == nil)
+        assert(lastSetCompletion == nil)
         if let selection {
             assert(selection.state == .unstarted || selection.state == .ended)
         }
@@ -64,11 +67,14 @@ public extension TemplateBuffer {
             )
         }
         
+        lastSetCompletion = nil
         selection = nil
         onEmptying()
     }
     
     func start() {
+        
+        assert(lastSetCompletion == nil)
         
         guard let selection else {
             assertionFailure()
@@ -126,8 +132,43 @@ public extension TemplateBuffer {
             return
         }
         
+        lastSetCompletion = nil
+        
         selection.end()
         
         healthKitManager.end()
+    }
+
+    func deleteExercise(withId2 id2: UUID) {
+
+        guard let selection else {
+            assertionFailure()
+            return
+        }
+
+        if lastSetCompletion?.exercise.id2 == id2 {
+            lastSetCompletion = nil
+        }
+
+        selection.deleteExercise(withId2: id2)
+    }
+
+    func updateLastSetCompletion(for exercise: Exercise) {
+        
+        lastSetCompletion = LastSetCompletion(
+            exercise: exercise,
+            lastSetCompletionInstant: Date.now
+        )
+    }
+    
+    func getAndClearLastSetCompletion(for exercise: Exercise) -> LastSetCompletion? {
+        
+        guard let lastSetCompletion,
+              lastSetCompletion.exercise.id2 == exercise.id2 else {
+            return nil
+        }
+        
+        self.lastSetCompletion = nil
+        return lastSetCompletion
     }
 }
