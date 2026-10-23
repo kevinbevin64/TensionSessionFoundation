@@ -12,6 +12,8 @@ final public class TemplateBuffer {
     
     public private(set) var selection: Workout?
     
+    public private(set) var lastSetCompletion: LastSetCompletion?
+    
     private var healthKitManager: HKWorkoutManager
     
     var onInsertion: (UUID) -> Void
@@ -65,6 +67,7 @@ public extension TemplateBuffer {
         }
         
         selection = nil
+        lastSetCompletion = nil
         onEmptying()
     }
     
@@ -129,5 +132,18 @@ public extension TemplateBuffer {
         selection.end()
         
         healthKitManager.end()
+    }
+    
+    func completeSet(exercise: Exercise, lastSetCompletionInstant: Date) {
+        
+        lastSetCompletion = LastSetCompletion(
+            exercise: exercise,
+            lastSetCompletionInstant: lastSetCompletionInstant
+        )
+    }
+    
+    func clearLastSetCompletion() {
+        
+        lastSetCompletion = nil
     }
 }

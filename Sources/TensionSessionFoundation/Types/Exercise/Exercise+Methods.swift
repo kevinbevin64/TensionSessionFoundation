@@ -20,7 +20,7 @@ public extension Exercise {
         setDetails.removeLast()
     }
     
-    func removeSet(at index: Int) {
+    func removeSetDetail(at index: Int) {
         
         assert(index < setDetails.count)
         setDetails.remove(at: index)
