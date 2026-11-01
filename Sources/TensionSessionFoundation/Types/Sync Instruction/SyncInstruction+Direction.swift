@@ -9,11 +9,9 @@ extension SyncInstruction {
     
     #if os(iOS)
     typealias Outbound = Operation.PhoneToWatch
-    
     typealias Inbound = Operation.WatchToPhone
     #elseif os(watchOS)
     typealias Outbound = Operation.WatchToPhone
-    
     typealias Inbound = Operation.PhoneToWatch
     #endif
     
