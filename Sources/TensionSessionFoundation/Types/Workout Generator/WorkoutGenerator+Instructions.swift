@@ -13,7 +13,9 @@ extension WorkoutGenerator {
         You will be given a workout description \
         and are to generate a workout \
         containing a series of exercises \
-        according to the description.
+        according to the description. \
+        Each exercise in the workout must be different; \
+        never include the same exercise more than once.
         """
 }
 #endif // os(iOS)
