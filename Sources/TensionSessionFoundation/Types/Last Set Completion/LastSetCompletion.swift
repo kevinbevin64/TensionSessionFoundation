@@ -11,13 +11,13 @@ public struct LastSetCompletion {
     
     public var exercise: Exercise
     
-    public var lastSetCompletionInstant: Date
+    public var restStartInstant: Date
     
     public init(
         exercise: Exercise,
-        lastSetCompletionInstant: Date
+        restStartInstant: Date
     ) {
         self.exercise = exercise
-        self.lastSetCompletionInstant = lastSetCompletionInstant
+        self.restStartInstant = restStartInstant
     }
 }
