@@ -5,6 +5,7 @@
 //  Created by Kevin on 11/1/26.
 //
 
+import DequeModule
 import Foundation
 
 class ExerciseHistorian {
@@ -13,9 +14,12 @@ class ExerciseHistorian {
 
     private var sortedExerciseHistories: [SearchRule: [HistoricalExercise]]
 
+    private var pendingSearches: Deque<SearchRule>
+
     init(workoutManager: WorkoutManager) {
         self.sortedExerciseHistories = [:]
         self.workoutManager = workoutManager
+        self.pendingSearches = Deque()
     }
 
     func getSortedExerciseHistory(
