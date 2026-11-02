@@ -42,16 +42,14 @@ public final class Companion: NSObject, WCSessionDelegate {
     public var isReachable: Bool?
 
     public var getExerciseCatalogDTO: (() -> Exercise.Catalog.DTO)?
-    
-    // MARK: iOS
 
-    #if os(iOS)
+    #if os(iOS) // MARK: iOS
 
     public var isPaired: Bool?
 
     public var isWatchAppInstalled: Bool?
 
-    #elseif os(watchOS)
+    #elseif os(watchOS) // MARK: watchOS
 
     var requestTemplateWorkoutsHashCheckSchedule: Schedule?
     
