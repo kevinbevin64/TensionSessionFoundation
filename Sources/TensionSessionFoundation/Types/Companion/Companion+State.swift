@@ -1,5 +1,5 @@
 //
-//  Companion+StateChanges.swift
+//  Companion+State.swift
 //  TensionSession
 //
 //  Created by Kevin Chen on 9/4/26.
@@ -8,7 +8,7 @@
 import WatchConnectivity
 
 #if os(iOS)
-public extension Companion {
+extension Companion {
     
     nonisolated func updateStateProperties(_ session: WCSession) {
         
@@ -34,6 +34,9 @@ public extension Companion {
             
         }
     }
+}
+
+public extension Companion {
     
     nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
         
@@ -48,8 +51,8 @@ public extension Companion {
 #endif // os(iOS)
 
 #if os(watchOS)
-public extension Companion {
- 
+extension Companion {
+    
     nonisolated func updateStateProperties(_ session: WCSession) {
         
         if session.activationState == .activated {
@@ -68,10 +71,13 @@ public extension Companion {
             
         }
     }
+}
+
+public extension Companion {
     
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
         
-        if session.activationState != .activated {
+        if session.activationState == .activated {
             
             let isReachable = session.isReachable
             

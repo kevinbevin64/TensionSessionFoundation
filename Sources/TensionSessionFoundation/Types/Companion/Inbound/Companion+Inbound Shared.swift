@@ -15,9 +15,6 @@ public extension Companion {
         _ session: WCSession,
         didReceiveMessage message: [String: Any]
     ) {
-        
-        print("Received message: \(message)")
-        
         process(message)
     }
     
@@ -37,32 +34,31 @@ extension Companion {
         _ dictionary: [String: Any],
         replyHandler: (([String: Any]) -> Void)? = nil
     ) {
-
+        
         nonisolated(unsafe) let dictionary = dictionary
         nonisolated(unsafe) let replyHandler = replyHandler
         
         DispatchQueue.main.async { [weak self] in
             
+            let instruction: SyncInstruction
+            
             do {
-                
-                let instruction = try SyncInstruction(fromDictionary: dictionary)
-                
-                guard let operation = instruction.inbound else {
-                    assertionFailure()
-                    return
-                }
-                
-                #if os(iOS)
-                self?.process(operation, replyHandler: replyHandler)
-                #elseif os(watchOS)
-                self?.process(operation)
-                #endif
-                
+                instruction = try SyncInstruction(fromDictionary: dictionary)
             } catch {
-                
-                print("Failed to create instruction")
-                
+                print("Failed to decode sync instruction: \(error.localizedDescription)")
+                return
             }
+            
+            guard let operation = instruction.inbound else {
+                assertionFailure("Received a sync instruction meant for the other device")
+                return
+            }
+            
+            #if os(iOS)
+            self?.process(operation, replyHandler: replyHandler)
+            #elseif os(watchOS)
+            self?.process(operation)
+            #endif
         }
     }
 }

@@ -10,6 +10,31 @@ import Foundation
 #if os(watchOS)
 extension Companion {
     
+    func process(_ operation: SyncInstruction.Inbound) {
+        
+        switch operation {
+            
+        case .addTemplateWorkout(let workout):
+            receiveNewTemplate(workout)
+            
+        case .editTemplateWorkout(let workout):
+            receiveEditedTemplate(workout)
+            
+        case .deleteTemplateWorkout(let id2):
+            receiveTemplateToBeDeleted(id2)
+            
+        case .templateWorkoutsHashCheckReply(let status):
+            receiveTemplateWorkoutsHashCheckReply(status)
+            
+        case .exerciseCatalogHashCheckReply(let status):
+            receiveExerciseCatalogHashCheckReply(status)
+            
+        case .editExerciseCatalog(let catalog):
+            receiveEditedCatalog(catalog)
+            
+        }
+    }
+    
     func receiveNewTemplate(_ workout: Workout.DTO) {
         
         workoutManager?.addWorkout(Workout(fromDTO: workout))
@@ -31,64 +56,21 @@ extension Companion {
     
     func receiveTemplateWorkoutsHashCheckReply(_ syncStatus: SyncStatus.TemplateWorkouts) {
         
-        print("RECEIVED REPLY!!!")
+        guard case .notMatched(let workouts) = syncStatus else { return }
         
-        switch syncStatus {
-            
-        case .matched:
-            print("Matched")
-            
-        case .notMatched(let workouts):
-            print("Did not match")
-            workoutManager?.overwriteTemplates(workouts.map { Workout(fromDTO: $0) })
-            
-        }
+        workoutManager?.overwriteTemplates(workouts.map { Workout(fromDTO: $0) })
     }
     
     func receiveExerciseCatalogHashCheckReply(_ syncStatus: SyncStatus.ExerciseCatalog) {
         
-        print("RECEIVED REPLY!!!")
+        guard case .notMatched(let catalog) = syncStatus else { return }
         
-        switch syncStatus {
-            
-        case .matched:
-            print("Matched")
-            
-        case .notMatched(let catalogDTO):
-            print("Did not match")
-            editCatalog?(catalogDTO)
-            
-        }
+        editCatalog?(catalog)
     }
     
-    func receiveEditedCatalogDTO(_ catalogDTO: Exercise.Catalog.DTO) {
+    func receiveEditedCatalog(_ catalog: Exercise.Catalog.DTO) {
         
-        editCatalog?(catalogDTO)
-    }
-    
-    func process(_ operation: SyncInstruction.Inbound) {
-        
-        switch operation {
-        
-        case .addTemplateWorkout(let workout):
-            receiveNewTemplate(workout)
-            
-        case .editTemplateWorkout(let workout):
-            receiveEditedTemplate(workout)
-            
-        case .deleteTemplateWorkout(let id2):
-            receiveTemplateToBeDeleted(id2)
-            
-        case .templateWorkoutsHashCheckReply(let status):
-            receiveTemplateWorkoutsHashCheckReply(status)
-            
-        case .exerciseCatalogHashCheckReply(let status):
-            receiveExerciseCatalogHashCheckReply(status)
-            
-        case .editExerciseCatalog(let catalog):
-            receiveEditedCatalogDTO(catalog)
-            
-        }
+        editCatalog?(catalog)
     }
 }
 #endif // os(watchOS)

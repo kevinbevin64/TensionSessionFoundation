@@ -7,9 +7,11 @@
 
 import WatchConnectivity
 
-public extension Companion {
+extension Companion {
     
-    func send(_ dictionary: [String: Any]) {
+    func send(_ operation: SyncInstruction.Outbound) {
+        
+        guard let dictionary = dictionary(for: operation) else { return }
         
         #if DEBUG
         WCSession.default.sendMessage(
@@ -17,22 +19,30 @@ public extension Companion {
             replyHandler: nil
         )
         #else
-        WCSession.default.transferUserInfo(
-            dictionary
-        )
+        WCSession.default.transferUserInfo(dictionary)
         #endif
     }
     
     func sendInstantly(
-        _ dictionary: [String: Any],
-        replyHandler: (([String : Any]) -> Void)? = nil,
-        errorHandler: ((any Swift.Error) -> Void)? = nil
+        _ operation: SyncInstruction.Outbound,
+        replyHandler: (([String: Any]) -> Void)? = nil
     ) {
+        
+        guard let dictionary = dictionary(for: operation) else { return }
         
         WCSession.default.sendMessage(
             dictionary,
-            replyHandler: replyHandler,
-            errorHandler: errorHandler
+            replyHandler: replyHandler
         )
+    }
+    
+    func dictionary(for operation: SyncInstruction.Outbound) -> [String: Any]? {
+        
+        do {
+            return try SyncInstruction(operation).dictionaryForm()
+        } catch {
+            print("Failed to encode sync instruction: \(error.localizedDescription)")
+            return nil
+        }
     }
 }

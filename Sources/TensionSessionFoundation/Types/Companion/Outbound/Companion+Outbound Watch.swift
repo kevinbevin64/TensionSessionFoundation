@@ -10,62 +10,22 @@ public extension Companion {
     
     func requestTemplateWorkoutsHashCheck() {
         
-        print("Requesting template workouts hash check.")
+        guard let hash = workoutManager?.getTemplateWorkoutsHash() else { return }
         
-        do {
-            
-            guard let hash = workoutManager?.getTemplateWorkoutsHash() else {
-                return
-            }
-            
-            let instruction = SyncInstruction(
-                .templateWorkoutsHashCheckRequest(hash: hash)
-            )
-            let rawInstruction = try instruction.dictionaryForm()
-            
-            sendInstantly(
-                rawInstruction,
-                replyHandler: { dictionary in
-                    print("WATCH RECEIVED REPLY DICTIONARY!!!")
-                    self.process(dictionary)
-                }
-            )
-            
-        } catch {
-            
-            print("ERROR")
-            
-        }
+        sendInstantly(
+            .templateWorkoutsHashCheckRequest(hash: hash),
+            replyHandler: { reply in self.process(reply) }
+        )
     }
     
     func requestExerciseCatalogHashCheck() {
         
-        print("Requesting exercise catalog hash check.")
+        guard let hash = getExerciseCatalogDTO?().getHash() else { return }
         
-        do {
-            
-            guard let hash = getExerciseCatalogDTO?().getHash() else {
-                return
-            }
-            
-            let instruction = SyncInstruction(
-                .exerciseCatalogHashCheckRequest(hash: hash)
-            )
-            let rawInstruction = try instruction.dictionaryForm()
-            
-            sendInstantly(
-                rawInstruction,
-                replyHandler: { dictionary in
-                    print("WATCH RECEIVED REPLY DICTIONARY!!!")
-                    self.process(dictionary)
-                }
-            )
-            
-        } catch {
-            
-            print("ERROR")
-            
-        }
+        sendInstantly(
+            .exerciseCatalogHashCheckRequest(hash: hash),
+            replyHandler: { reply in self.process(reply) }
+        )
     }
 }
 #endif // os(watchOS)

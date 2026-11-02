@@ -5,41 +5,21 @@
 //  Created by Kevin Chen on 8/27/26.
 //
 
-///
-/// Reading from the documentation
-/// - iOS needs activationDidCompleteWith, sessionDidBecomeInactive, and sessionDidBecomeActive
-///
-///
-
 import WatchConnectivity
 
 @Observable
 @MainActor
 public final class Companion: NSObject, WCSessionDelegate {
     
-    public var userInfo: UserInfo?
-    
     public var workoutManager: WorkoutManager?
     
     public var isActive: Bool {
         
         #if os(iOS)
-        // Ensure the properties stay in sync
-        assert({
-            if isReachable == nil
-                || isPaired == nil
-                || isWatchAppInstalled == nil
-            {
-                if isReachable != nil
-                    || isPaired != nil
-                    || isWatchAppInstalled != nil
-                {
-                    return false
-                }
-                return true
-            }
-            return true
-        }())
+        assert(
+            (isReachable == nil) == (isPaired == nil)
+                && (isPaired == nil) == (isWatchAppInstalled == nil)
+        )
         #endif // os(iOS)
         
         return isReachable != nil
@@ -56,9 +36,7 @@ public final class Companion: NSObject, WCSessionDelegate {
     #endif // os(iOS)
     
     #if os(watchOS)
-    var timerTask: Task<Void, Never>?
-    
-    var timerAction: (@MainActor () -> Void)?
+    var requestTemplateWorkoutsHashCheckSchedule: Schedule?
     
     var requestExerciseCatalogHashCheckSchedule: Schedule?
     #endif // os(watchOS)
@@ -69,5 +47,5 @@ public final class Companion: NSObject, WCSessionDelegate {
     
     #if os(watchOS)
     public var editCatalog: ((Exercise.Catalog.DTO) -> Void)?
-    #endif
+    #endif // os(watchOS)
 }

@@ -16,77 +16,11 @@ public extension Companion {
         didReceiveMessage message: [String: Any],
         replyHandler: @escaping ([String: Any]) -> Void
     ) {
-        
-        print("Received message with reply handler")
-        
         process(message, replyHandler: replyHandler)
     }
 }
 
 extension Companion {
-    
-    func receiveTemplateWorkoutsHashCheckRequest(
-        _ watchHash: WorkoutManager.TemplateWorkoutsHash
-    ) -> [String: Any] {
-        
-        print("Received check request!")
-        
-        do {
-            
-            guard let phoneHash = workoutManager?.getTemplateWorkoutsHash() else { return [:] } // FIXME:
-            
-            let syncStatus: SyncStatus.TemplateWorkouts
-            
-            if watchHash == phoneHash {
-                syncStatus = .matched
-            } else {
-                let templateDTOs = workoutManager?.sortedTemplates.map { $0.getDTO() }
-                syncStatus = .notMatched(templateDTOs ?? [])
-            }
-            
-            let instruction = SyncInstruction(
-                .templateWorkoutsHashCheckReply(status: syncStatus)
-            )
-            
-            return try instruction.dictionaryForm()
-            
-        } catch {
-            
-            print("Failed to create instruction dictionary")
-            return [:]
-        }
-    }
-    
-    func receiveExerciseCatalogHashCheckRequest(
-        _ watchHash: Exercise.Catalog.DTO.Hash
-    ) -> [String: Any] {
-        
-        print("Received check request!")
-        
-        do {
-            
-            guard let catalogDTO = getExerciseCatalogDTO?() else { return [:] }
-            
-            let syncStatus: SyncStatus.ExerciseCatalog
-            
-            if watchHash == catalogDTO.getHash() {
-                syncStatus = .matched
-            } else {
-                syncStatus = .notMatched(catalogDTO)
-            }
-            
-            let instruction = SyncInstruction(
-                .exerciseCatalogHashCheckReply(status: syncStatus)
-            )
-            
-            return try instruction.dictionaryForm()
-            
-        } catch {
-            
-            print("Failed to create instruction dictionary")
-            return [:]
-        }
-    }
     
     func process(
         _ operation: SyncInstruction.Inbound,
@@ -96,7 +30,7 @@ extension Companion {
         switch operation {
             
         case .addHistoricalWorkout:
-            assertionFailure()
+            assertionFailure("Receiving historical workouts isn't supported yet")
             
         case .templateWorkoutsHashCheckRequest(let hash):
             replyHandler?(receiveTemplateWorkoutsHashCheckRequest(hash))
@@ -105,6 +39,42 @@ extension Companion {
             replyHandler?(receiveExerciseCatalogHashCheckRequest(hash))
             
         }
+    }
+    
+    func receiveTemplateWorkoutsHashCheckRequest(
+        _ watchHash: WorkoutManager.TemplateWorkoutsHash
+    ) -> [String: Any] {
+        
+        guard let workoutManager else { return [:] }
+        
+        let phoneHash = workoutManager.getTemplateWorkoutsHash()
+        
+        let syncStatus: SyncStatus.TemplateWorkouts
+        
+        if watchHash == phoneHash {
+            syncStatus = .matched
+        } else {
+            syncStatus = .notMatched(workoutManager.sortedTemplates.map { $0.getDTO() })
+        }
+        
+        return dictionary(for: .templateWorkoutsHashCheckReply(status: syncStatus)) ?? [:]
+    }
+    
+    func receiveExerciseCatalogHashCheckRequest(
+        _ watchHash: Exercise.Catalog.DTO.Hash
+    ) -> [String: Any] {
+        
+        guard let catalog = getExerciseCatalogDTO?() else { return [:] }
+        
+        let syncStatus: SyncStatus.ExerciseCatalog
+        
+        if watchHash == catalog.getHash() {
+            syncStatus = .matched
+        } else {
+            syncStatus = .notMatched(catalog)
+        }
+        
+        return dictionary(for: .exerciseCatalogHashCheckReply(status: syncStatus)) ?? [:]
     }
 }
 #endif // os(iOS)
