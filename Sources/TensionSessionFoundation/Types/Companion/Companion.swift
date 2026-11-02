@@ -16,10 +16,22 @@ public final class Companion: NSObject, WCSessionDelegate {
     public var isActive: Bool {
         
         #if os(iOS)
-        assert(
-            (isReachable == nil) == (isPaired == nil)
-                && (isPaired == nil) == (isWatchAppInstalled == nil)
-        )
+        // Ensure the properties stay in sync
+        assert({
+            if isReachable == nil
+                || isPaired == nil
+                || isWatchAppInstalled == nil
+            {
+                if isReachable != nil
+                    || isPaired != nil
+                    || isWatchAppInstalled != nil
+                {
+                    return false
+                }
+                return true
+            }
+            return true
+        }())
         #endif // os(iOS)
         
         return isReachable != nil
