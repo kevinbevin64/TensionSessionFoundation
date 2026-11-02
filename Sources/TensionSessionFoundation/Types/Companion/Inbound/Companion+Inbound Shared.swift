@@ -8,10 +8,10 @@
 import Foundation
 import WatchConnectivity
 
-public extension Companion {
+extension Companion {
     
     nonisolated
-    func session(
+    public func session(
         _ session: WCSession,
         didReceiveMessage message: [String: Any]
     ) {
@@ -19,7 +19,7 @@ public extension Companion {
     }
     
     nonisolated
-    func session(
+    public func session(
         _ session: WCSession,
         didReceiveUserInfo userInfo: [String: Any]
     ) {
