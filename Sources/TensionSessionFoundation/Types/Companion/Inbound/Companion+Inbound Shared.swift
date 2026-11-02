@@ -40,7 +40,6 @@ extension Companion {
             guard let instruction = try? SyncInstruction(fromDictionary: dictionary),
                   let operation = instruction.inbound else
             {
-                assertionFailure()
                 return
             }
             
