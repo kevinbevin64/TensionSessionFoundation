@@ -10,21 +10,27 @@ public extension Companion {
     
     func requestTemplateWorkoutsHashCheck() {
         
-        guard let hash = workoutManager?.getTemplateWorkoutsHash() else { return }
-        
+        guard let hash = workoutManager?.getTemplateWorkoutsHash() else {
+            assertionFailure()
+            return
+        }
+
         sendInstantly(
             .templateWorkoutsHashCheckRequest(hash: hash),
-            replyHandler: { reply in self.process(reply) }
+            replyHandler: { self.process($0) }
         )
     }
     
     func requestExerciseCatalogHashCheck() {
         
-        guard let hash = getExerciseCatalogDTO?().getHash() else { return }
-        
+        guard let hash = getExerciseCatalogDTO?().getHash() else {
+            assertionFailure()
+            return
+        }
+
         sendInstantly(
             .exerciseCatalogHashCheckRequest(hash: hash),
-            replyHandler: { reply in self.process(reply) }
+            replyHandler: { self.process($0) }
         )
     }
 }

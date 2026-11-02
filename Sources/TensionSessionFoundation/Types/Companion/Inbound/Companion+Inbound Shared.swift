@@ -25,9 +25,6 @@ public extension Companion {
     ) {
         process(userInfo)
     }
-}
-
-extension Companion {
     
     nonisolated
     func process(
@@ -39,18 +36,11 @@ extension Companion {
         nonisolated(unsafe) let replyHandler = replyHandler
         
         DispatchQueue.main.async { [weak self] in
-            
-            let instruction: SyncInstruction
-            
-            do {
-                instruction = try SyncInstruction(fromDictionary: dictionary)
-            } catch {
-                print("Failed to decode sync instruction: \(error.localizedDescription)")
-                return
-            }
-            
-            guard let operation = instruction.inbound else {
-                assertionFailure("Received a sync instruction meant for the other device")
+
+            guard let instruction = try? SyncInstruction(fromDictionary: dictionary),
+                  let operation = instruction.inbound else
+            {
+                assertionFailure()
                 return
             }
             

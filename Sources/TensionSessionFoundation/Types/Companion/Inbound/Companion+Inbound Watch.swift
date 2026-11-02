@@ -47,7 +47,9 @@ extension Companion {
     
     func receiveTemplateToBeDeleted(_ id2: UUID) {
         
-        guard let workout = workoutManager?.unsortedTemplates.first(where: { $0.id2 == id2 }) else {
+        guard let workout = workoutManager?.unsortedTemplates.first(
+            where: { $0.id2 == id2 }
+        ) else {
             return
         }
         

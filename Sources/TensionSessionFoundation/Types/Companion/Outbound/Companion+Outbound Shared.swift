@@ -10,8 +10,10 @@ import WatchConnectivity
 extension Companion {
     
     func send(_ operation: SyncInstruction.Outbound) {
-        
-        guard let dictionary = dictionary(for: operation) else { return }
+
+        let dictionary = try? SyncInstruction(operation).dictionaryForm()
+
+        guard let dictionary else { return }
         
         #if DEBUG
         WCSession.default.sendMessage(
@@ -28,21 +30,13 @@ extension Companion {
         replyHandler: (([String: Any]) -> Void)? = nil
     ) {
         
-        guard let dictionary = dictionary(for: operation) else { return }
-        
+        let dictionary = try? SyncInstruction(operation).dictionaryForm()
+
+        guard let dictionary else { return }
+
         WCSession.default.sendMessage(
             dictionary,
             replyHandler: replyHandler
         )
-    }
-    
-    func dictionary(for operation: SyncInstruction.Outbound) -> [String: Any]? {
-        
-        do {
-            return try SyncInstruction(operation).dictionaryForm()
-        } catch {
-            print("Failed to encode sync instruction: \(error.localizedDescription)")
-            return nil
-        }
     }
 }

@@ -10,7 +10,9 @@ import WatchConnectivity
 @Observable
 @MainActor
 public final class Companion: NSObject, WCSessionDelegate {
-    
+
+    // MARK: Shared
+
     public var workoutManager: WorkoutManager?
     
     public var isActive: Bool {
@@ -36,28 +38,26 @@ public final class Companion: NSObject, WCSessionDelegate {
         
         return isReachable != nil
     }
-    
+
     public var isReachable: Bool?
-    
-    // MARK: Variables
-    
+
+    // MARK: iOS
+
     #if os(iOS)
+
     public var isPaired: Bool?
     
     public var isWatchAppInstalled: Bool?
-    #endif // os(iOS)
-    
-    #if os(watchOS)
+
+    public var getExerciseCatalogDTO: (() -> Exercise.Catalog.DTO)?
+
+    #elseif os(watchOS)
+
     var requestTemplateWorkoutsHashCheckSchedule: Schedule?
     
     var requestExerciseCatalogHashCheckSchedule: Schedule?
-    #endif // os(watchOS)
-    
-    // MARK: Closures
-    
-    public var getExerciseCatalogDTO: (() -> Exercise.Catalog.DTO)?
-    
-    #if os(watchOS)
+
     public var editCatalog: ((Exercise.Catalog.DTO) -> Void)?
+
     #endif // os(watchOS)
 }
