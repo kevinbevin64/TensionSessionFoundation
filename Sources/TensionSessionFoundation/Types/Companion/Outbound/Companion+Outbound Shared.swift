@@ -24,7 +24,19 @@ extension Companion {
         WCSession.default.transferUserInfo(dictionary)
         #endif
     }
-    
+
+    func send(dictionary: [String: Any]) {
+
+        #if DEBUG
+        WCSession.default.sendMessage(
+            dictionary,
+            replyHandler: nil
+        )
+        #else
+        WCSession.default.transferUserInfo(dictionary)
+        #endif
+    }
+
     func sendInstantly(
         _ operation: SyncInstruction.Outbound,
         replyHandler: (([String: Any]) -> Void)? = nil,

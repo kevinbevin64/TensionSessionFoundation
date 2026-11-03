@@ -24,22 +24,26 @@ extension Companion {
         replyHandler: (([String: Any]) -> Void)?
     ) {
 
+        let replyHandler: (([String: Any]) -> Void) = replyHandler ?? { [weak self] dictionary in
+            self?.send(dictionary: dictionary)
+        }
+
         switch operation {
 
         case .addHistoricalWorkout:
             assertionFailure("Receiving historical workouts isn't supported yet")
 
         case .templateWorkoutsHashCheckRequest(let hash):
-            replyHandler?(receiveTemplateWorkoutsHashCheckRequest(hash))
+            replyHandler(receiveTemplateWorkoutsHashCheckRequest(hash))
 
         case .exerciseCatalogHashCheckRequest(let hash):
-            replyHandler?(receiveExerciseCatalogHashCheckRequest(hash))
+            replyHandler(receiveExerciseCatalogHashCheckRequest(hash))
 
         case let .requestUserInfoEditApproval(former, final):
-            replyHandler?(receiveUserInfoEditApprovalRequest(former, final))
+            replyHandler(receiveUserInfoEditApprovalRequest(former, final))
 
         case .requestUserInfoOverwrite:
-            replyHandler?(receiveUserInfoOverwriteRequest())
+            replyHandler(receiveUserInfoOverwriteRequest())
 
         }
     }
