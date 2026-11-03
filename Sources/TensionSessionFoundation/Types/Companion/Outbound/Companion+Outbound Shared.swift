@@ -41,24 +41,15 @@ extension Companion {
     func sendInstantly(
         _ operation: SyncInstruction.Outbound,
         replyHandler: (([String: Any]) -> Void)? = nil,
-        sendSlowlyOnError: Bool = false,
     ) {
         
         let dictionary = try? SyncInstruction(operation).dictionaryForm()
 
         guard let dictionary else { return }
 
-        var errorHandler: ((any Error) -> Void)? = nil
-        if sendSlowlyOnError {
-            errorHandler = { _ in
-                self.send(dictionary: dictionary)
-            }
-        }
-
         WCSession.default.sendMessage(
             dictionary,
-            replyHandler: replyHandler,
-            errorHandler: errorHandler
+            replyHandler: replyHandler
         )
     }
 }

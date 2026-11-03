@@ -39,42 +39,15 @@ public extension Companion {
         final finalUserInfo: UserInfo
     ) {
 
-        let operation = SyncInstruction.Outbound.requestUserInfoEditApproval(
+        send(.requestUserInfoEditApproval(
             former: formerUserInfo.getDTO(),
             final: finalUserInfo.getDTO()
-        )
-
-        if isActive {
-
-            sendInstantly(
-                operation,
-                replyHandler: { self.process($0) },
-                sendSlowlyOnError: true
-            )
-
-        } else {
-
-            send(operation)
-
-        }
+        ))
     }
 
     func requestUserInfoOverwrite() {
 
-        let operation = SyncInstruction.Outbound.requestUserInfoOverwrite
-
-        if isActive {
-
-            sendInstantly(
-                operation,
-                replyHandler: { self.process($0) },
-                sendSlowlyOnError: true
-            )
-
-        } else {
-
-            send(operation)
-        }
+        send(.requestUserInfoOverwrite)
     }
 }
 #endif // os(watchOS)
