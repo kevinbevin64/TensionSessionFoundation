@@ -9,7 +9,7 @@ extension ApprovalStatus {
 
     enum UserInfo: Codable & WatchTransferrable {
 
-        case approved
+        case approved(TensionSessionFoundation.UserInfo.DTO)
 
         case denied(TensionSessionFoundation.UserInfo.DTO)
     }

@@ -90,8 +90,12 @@ extension Companion {
 
     func receiveUserInfoEditApproval(_ approvalStatus: ApprovalStatus.UserInfo) {
 
-        if case .denied(let userInfo) = approvalStatus {
+        switch approvalStatus {
 
+        case .approved(let userInfo):
+            editUserInfo?(userInfo)
+
+        case .denied(let userInfo):
             editUserInfo?(userInfo)
         }
     }

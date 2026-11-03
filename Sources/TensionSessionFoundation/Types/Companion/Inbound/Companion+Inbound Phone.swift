@@ -124,7 +124,7 @@ extension Companion {
 
         if approved {
             editUserInfo?(finalUserInfo)
-            approvalStatus = .approved
+            approvalStatus = .approved(finalUserInfo)
         } else {
             approvalStatus = .denied(phoneUserInfo)
         }
