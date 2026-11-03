@@ -25,6 +25,7 @@ extension Companion {
         #endif
     }
 
+    nonisolated
     func send(dictionary: [String: Any]) {
 
         #if DEBUG
@@ -40,7 +41,7 @@ extension Companion {
     func sendInstantly(
         _ operation: SyncInstruction.Outbound,
         replyHandler: (([String: Any]) -> Void)? = nil,
-        errorHandler: ((any Error) -> Void)? = nil
+        sendSlowlyOnError: Bool = false,
     ) {
         
         let dictionary = try? SyncInstruction(operation).dictionaryForm()
@@ -50,7 +51,10 @@ extension Companion {
         WCSession.default.sendMessage(
             dictionary,
             replyHandler: replyHandler,
-            errorHandler: errorHandler
+            errorHandler: { _ in
+                guard sendSlowlyOnError else { return }
+                self.send(dictionary: dictionary)
+            }
         )
     }
 }

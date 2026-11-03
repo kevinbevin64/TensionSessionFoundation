@@ -49,9 +49,7 @@ public extension Companion {
             sendInstantly(
                 operation,
                 replyHandler: { self.process($0) },
-                errorHandler: { [weak self] _ in
-                    self?.send(operation)
-                }
+                sendSlowlyOnError: true
             )
 
         } else {
@@ -70,9 +68,7 @@ public extension Companion {
             sendInstantly(
                 operation,
                 replyHandler: { self.process($0) },
-                errorHandler: { [weak self] _ in
-                    self?.send(operation)
-                }
+                sendSlowlyOnError: true
             )
 
         } else {
