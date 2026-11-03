@@ -31,7 +31,15 @@ extension Companion {
             
         case .editExerciseCatalog(let catalog):
             receiveEditedCatalog(catalog)
-            
+
+        case .editUserInfo(let userInfo):
+            receiveEditedUserInfo(userInfo)
+
+        case .userInfoEditApproval(status: let status):
+            receiveUserInfoEditApproval(status)
+
+        case .userInfoEditOverwrite(userInfo: let userInfo):
+            receiveUserInfoOverwrite(userInfo)
         }
     }
     
@@ -73,6 +81,24 @@ extension Companion {
     func receiveEditedCatalog(_ catalog: Exercise.Catalog.DTO) {
         
         editCatalog?(catalog)
+    }
+
+    func receiveEditedUserInfo(_ userInfo: UserInfo.DTO) {
+
+        editUserInfo?(userInfo)
+    }
+
+    func receiveUserInfoEditApproval(_ approvalStatus: ApprovalStatus.UserInfo) {
+
+        if case .denied(let userInfo) = approvalStatus {
+
+            editUserInfo?(userInfo)
+        }
+    }
+
+    func receiveUserInfoOverwrite(_ userInfo: UserInfo.DTO) {
+
+        editUserInfo?(userInfo)
     }
 }
 #endif // os(watchOS)

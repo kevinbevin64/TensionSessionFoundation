@@ -27,5 +27,10 @@ public extension Companion {
         
         send(.editExerciseCatalog(catalog: catalog.getDTO()))
     }
+
+    func editUserInfo(_ userInfo: UserInfo) {
+
+        send(.editUserInfo(userInfo: userInfo.getDTO()))
+    }
 }
 #endif // os(iOS)

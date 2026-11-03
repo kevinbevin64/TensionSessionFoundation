@@ -33,5 +33,52 @@ public extension Companion {
             replyHandler: { self.process($0) }
         )
     }
+
+    func requestUserInfoEditApproval(
+        former formerUserInfo: UserInfo,
+        final finalUserInfo: UserInfo
+    ) {
+
+        let operation = SyncInstruction.Outbound.requestUserInfoEditApproval(
+            former: formerUserInfo.getDTO(),
+            final: finalUserInfo.getDTO()
+        )
+
+        if isActive {
+
+            sendInstantly(
+                operation,
+                replyHandler: { self.process($0) },
+                errorHandler: { [weak self] _ in
+                    self?.send(operation)
+                }
+            )
+
+        } else {
+
+            send(operation)
+
+        }
+    }
+
+    func requestUserInfoOverwrite() {
+
+        let operation = SyncInstruction.Outbound.requestUserInfoOverwrite
+
+        if isActive {
+
+            sendInstantly(
+                operation,
+                replyHandler: { self.process($0) },
+                errorHandler: { [weak self] _ in
+                    self?.send(operation)
+                }
+            )
+
+        } else {
+
+            send(operation)
+        }
+    }
 }
 #endif // os(watchOS)

@@ -35,6 +35,12 @@ extension Companion {
         case .exerciseCatalogHashCheckRequest(let hash):
             replyHandler?(receiveExerciseCatalogHashCheckRequest(hash))
 
+        case let .requestUserInfoEditApproval(former, final):
+            replyHandler?(receiveUserInfoEditApprovalRequest(former, final))
+
+        case .requestUserInfoOverwrite:
+            replyHandler?(receiveUserInfoOverwriteRequest())
+
         }
     }
 }
@@ -90,6 +96,52 @@ extension Companion {
         }
 
         let operation = SyncInstruction.Outbound.exerciseCatalogHashCheckReply(status: syncStatus)
+        let dictionary = try? SyncInstruction(operation).dictionaryForm()
+        guard let dictionary else {
+            assertionFailure()
+            return [:]
+        }
+
+        return dictionary
+    }
+
+    func receiveUserInfoEditApprovalRequest(
+        _ formerUserInfo: UserInfo.DTO,
+        _ finalUserInfo: UserInfo.DTO
+    ) -> [String: Any] {
+
+        guard let phoneUserInfo = getUserInfo?() else {
+            assertionFailure()
+            return [:]
+        }
+
+        let approved = formerUserInfo == phoneUserInfo
+        let approvalStatus: ApprovalStatus.UserInfo
+
+        if approved {
+            approvalStatus = .approved
+        } else {
+            approvalStatus = .denied(phoneUserInfo)
+        }
+
+        let operation = SyncInstruction.Outbound.userInfoEditApproval(status: approvalStatus)
+        let dictionary = try? SyncInstruction(operation).dictionaryForm()
+        guard let dictionary else {
+            assertionFailure()
+            return [:]
+        }
+
+        return dictionary
+    }
+
+    func receiveUserInfoOverwriteRequest() -> [String: Any] {
+
+        guard let phoneUserInfo = getUserInfo?() else {
+            assertionFailure()
+            return [:]
+        }
+
+        let operation = SyncInstruction.Outbound.userInfoEditOverwrite(userInfo: phoneUserInfo)
         let dictionary = try? SyncInstruction(operation).dictionaryForm()
         guard let dictionary else {
             assertionFailure()

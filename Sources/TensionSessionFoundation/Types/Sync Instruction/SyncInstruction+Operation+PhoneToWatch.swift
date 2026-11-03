@@ -17,5 +17,11 @@ extension SyncInstruction.Operation {
         case templateWorkoutsHashCheckReply(status: SyncStatus.TemplateWorkouts)
         case exerciseCatalogHashCheckReply(status: SyncStatus.ExerciseCatalog)
         case editExerciseCatalog(catalog: Exercise.Catalog.DTO)
+
+        // User Info
+
+        case editUserInfo(userInfo: UserInfo.DTO)
+        case userInfoEditApproval(status: ApprovalStatus.UserInfo)
+        case userInfoEditOverwrite(userInfo: UserInfo.DTO)
     }
 }

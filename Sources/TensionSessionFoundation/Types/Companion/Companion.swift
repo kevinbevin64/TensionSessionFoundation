@@ -43,11 +43,15 @@ public final class Companion: NSObject, WCSessionDelegate {
 
     public var getExerciseCatalogDTO: (() -> Exercise.Catalog.DTO)?
 
+    public var editUserInfo: ((UserInfo.DTO) -> Void)?
+
     #if os(iOS) // MARK: iOS
 
     public var isPaired: Bool?
 
     public var isWatchAppInstalled: Bool?
+
+    public var getUserInfo: (() -> UserInfo.DTO)?
 
     #elseif os(watchOS) // MARK: watchOS
 
