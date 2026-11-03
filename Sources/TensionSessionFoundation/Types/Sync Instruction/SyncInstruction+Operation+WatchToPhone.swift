@@ -12,6 +12,7 @@ extension SyncInstruction.Operation {
         case addHistoricalWorkout(workout: Workout.DTO)
         case templateWorkoutsHashCheckRequest(hash: WorkoutManager.TemplateWorkoutsHash)
         case exerciseCatalogHashCheckRequest(hash: Exercise.Catalog.DTO.Hash)
+        case requestTemplateWorkoutEditApproval(former: Workout.DTO, final: Workout.DTO)
 
         // User Info
 

@@ -39,6 +39,9 @@ extension Companion {
         case .exerciseCatalogHashCheckRequest(let hash):
             replyHandler(receiveExerciseCatalogHashCheckRequest(hash))
 
+        case let .requestTemplateWorkoutEditApproval(former, final):
+            replyHandler(receiveTemplateWorkoutEditApprovalRequest(former, final))
+
         case let .requestUserInfoEditApproval(former, final):
             replyHandler(receiveUserInfoEditApprovalRequest(former, final))
 
@@ -100,6 +103,51 @@ extension Companion {
         }
 
         let operation = SyncInstruction.Outbound.exerciseCatalogHashCheckReply(status: syncStatus)
+        let dictionary = try? SyncInstruction(operation).dictionaryForm()
+        guard let dictionary else {
+            assertionFailure()
+            return [:]
+        }
+
+        return dictionary
+    }
+
+    func receiveTemplateWorkoutEditApprovalRequest(
+        _ formerWorkout: Workout.DTO,
+        _ finalWorkout: Workout.DTO
+    ) -> [String: Any] {
+
+        guard let workoutManager else {
+            assertionFailure()
+            return [:]
+        }
+
+        let approvalStatus: ApprovalStatus.TemplateWorkout
+
+        if let phoneWorkout = workoutManager.unsortedTemplates.first(
+            where: { $0.id2 == formerWorkout.id2 }
+        ) {
+
+            var formerWorkout = formerWorkout
+            formerWorkout.unsortedExercises.sort { $0.order < $1.order }
+
+            var phoneWorkoutDTO = phoneWorkout.getDTO()
+            phoneWorkoutDTO.unsortedExercises.sort { $0.order < $1.order }
+
+            let approved = formerWorkout == phoneWorkoutDTO
+
+            if approved {
+                workoutManager.editTemplate(accordingTo: Workout(fromDTO: finalWorkout))
+                approvalStatus = .approved(phoneWorkout.getDTO())
+            } else {
+                approvalStatus = .denied(phoneWorkoutDTO)
+            }
+
+        } else {
+            approvalStatus = .nonexistent(id2: formerWorkout.id2)
+        }
+
+        let operation = SyncInstruction.Outbound.templateWorkoutEditApproval(status: approvalStatus)
         let dictionary = try? SyncInstruction(operation).dictionaryForm()
         guard let dictionary else {
             assertionFailure()

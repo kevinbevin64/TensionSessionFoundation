@@ -17,6 +17,7 @@ extension SyncInstruction.Operation {
         case templateWorkoutsHashCheckReply(status: SyncStatus.TemplateWorkouts)
         case exerciseCatalogHashCheckReply(status: SyncStatus.ExerciseCatalog)
         case editExerciseCatalog(catalog: Exercise.Catalog.DTO)
+        case templateWorkoutEditApproval(status: ApprovalStatus.TemplateWorkout)
 
         // User Info
 

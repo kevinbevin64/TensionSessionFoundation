@@ -34,6 +34,17 @@ public extension Companion {
         )
     }
 
+    func requestTemplateWorkoutEditApproval(
+        former formerWorkout: Workout,
+        final finalWorkout: Workout
+    ) {
+
+        send(.requestTemplateWorkoutEditApproval(
+            former: formerWorkout.getDTO(),
+            final: finalWorkout.getDTO()
+        ))
+    }
+
     func requestUserInfoEditApproval(
         former formerUserInfo: UserInfo,
         final finalUserInfo: UserInfo

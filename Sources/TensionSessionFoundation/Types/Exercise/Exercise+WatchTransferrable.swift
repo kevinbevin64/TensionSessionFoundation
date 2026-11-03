@@ -10,7 +10,7 @@ import Foundation
 extension Exercise: WatchTransferrable {
     
     nonisolated
-    struct DTO: Codable, WatchTransferrable {
+    struct DTO: Codable, WatchTransferrable, Equatable {
         
         var id2: UUID
         

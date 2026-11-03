@@ -32,6 +32,9 @@ extension Companion {
         case .editExerciseCatalog(let catalog):
             receiveEditedCatalog(catalog)
 
+        case .templateWorkoutEditApproval(status: let status):
+            receiveTemplateWorkoutEditApproval(status)
+
         case .editUserInfo(let userInfo):
             receiveEditedUserInfo(userInfo)
 
@@ -81,6 +84,21 @@ extension Companion {
     func receiveEditedCatalog(_ catalog: Exercise.Catalog.DTO) {
         
         editCatalog?(catalog)
+    }
+
+    func receiveTemplateWorkoutEditApproval(_ approvalStatus: ApprovalStatus.TemplateWorkout) {
+
+        switch approvalStatus {
+
+        case .approved(let workout):
+            workoutManager?.editTemplate(accordingTo: Workout(fromDTO: workout))
+
+        case .denied(let workout):
+            workoutManager?.editTemplate(accordingTo: Workout(fromDTO: workout))
+
+        case .nonexistent(id2: let id2):
+            receiveTemplateToBeDeleted(id2)
+        }
     }
 
     func receiveEditedUserInfo(_ userInfo: UserInfo.DTO) {
