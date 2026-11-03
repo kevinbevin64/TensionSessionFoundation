@@ -129,11 +129,18 @@ extension Companion {
         ) {
 
             let phoneWorkoutDTO = phoneWorkout.getDTO()
-            let approved = formerWorkout == phoneWorkoutDTO
+
+            // Workout order is ignored because editTemplate(accordingTo:) doesn't sync it,
+            // so the watch's order can be stale
+            let approved = formerWorkout.id2 == phoneWorkoutDTO.id2
+                && formerWorkout.name == phoneWorkoutDTO.name
+                && formerWorkout.state == phoneWorkoutDTO.state
+                && formerWorkout.startInstant == phoneWorkoutDTO.startInstant
+                && formerWorkout.sortedExercises == phoneWorkoutDTO.sortedExercises
 
             if approved {
                 workoutManager.editTemplate(accordingTo: Workout(fromDTO: finalWorkout))
-                approvalStatus = .approved(phoneWorkout.getDTO())
+                approvalStatus = .approved(finalWorkout)
             } else {
                 approvalStatus = .denied(phoneWorkoutDTO)
             }
