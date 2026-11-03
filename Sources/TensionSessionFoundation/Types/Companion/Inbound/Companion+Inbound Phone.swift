@@ -119,6 +119,7 @@ extension Companion {
         let approvalStatus: ApprovalStatus.UserInfo
 
         if approved {
+            editUserInfo?(finalUserInfo)
             approvalStatus = .approved
         } else {
             approvalStatus = .denied(phoneUserInfo)
