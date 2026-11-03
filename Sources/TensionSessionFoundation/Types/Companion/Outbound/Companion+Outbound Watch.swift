@@ -39,9 +39,17 @@ public extension Companion {
         final finalWorkout: Workout
     ) {
 
+        let formerWorkoutDTO = formerWorkout.getDTO()
+        let finalWorkoutDTO = finalWorkout.getDTO()
+
+        guard formerWorkoutDTO.id2 == finalWorkoutDTO.id2 else {
+            assertionFailure()
+            return
+        }
+
         send(.requestTemplateWorkoutEditApproval(
-            former: formerWorkout.getDTO(),
-            final: finalWorkout.getDTO()
+            former: formerWorkoutDTO,
+            final: finalWorkoutDTO
         ))
     }
 
