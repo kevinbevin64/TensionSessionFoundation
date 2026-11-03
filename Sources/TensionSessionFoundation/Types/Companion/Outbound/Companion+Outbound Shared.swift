@@ -48,13 +48,17 @@ extension Companion {
 
         guard let dictionary else { return }
 
+        var errorHandler: ((any Error) -> Void)? = nil
+        if sendSlowlyOnError {
+            errorHandler = { _ in
+                self.send(dictionary: dictionary)
+            }
+        }
+
         WCSession.default.sendMessage(
             dictionary,
             replyHandler: replyHandler,
-            errorHandler: { _ in
-                guard sendSlowlyOnError else { return }
-                self.send(dictionary: dictionary)
-            }
+            errorHandler: errorHandler
         )
     }
 }
