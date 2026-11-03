@@ -121,11 +121,7 @@ public extension WorkoutManager {
     
     func getTemplateWorkoutsHash() -> TemplateWorkoutsHash {
         
-        let dtos = sortedTemplates.map { workout -> Workout.DTO in
-            var dto = workout.getDTO()
-            dto.unsortedExercises.sort { $0.order < $1.order }
-            return dto
-        }
+        let dtos = sortedTemplates.map { $0.getDTO() }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         let data = try? encoder.encode(dtos)

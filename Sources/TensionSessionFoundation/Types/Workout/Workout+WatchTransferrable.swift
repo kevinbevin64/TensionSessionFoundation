@@ -22,7 +22,7 @@ extension Workout: WatchTransferrable {
         
         var startInstant: Date?
         
-        var unsortedExercises: [Exercise.DTO]
+        var sortedExercises: [Exercise.DTO]
     }
     
     func getDTO() -> DTO {
@@ -33,7 +33,7 @@ extension Workout: WatchTransferrable {
             name: name,
             state: state,
             startInstant: startInstant,
-            unsortedExercises: unsortedExercises.map { $0.getDTO() }
+            sortedExercises: sortedExercises.map { $0.getDTO() }
         )
     }
     
@@ -45,7 +45,7 @@ extension Workout: WatchTransferrable {
             name: dto.name,
             state: dto.state,
             startInstant: dto.startInstant,
-            exercises: dto.unsortedExercises.map { Exercise(fromDTO: $0) }
+            exercises: dto.sortedExercises.map { Exercise(fromDTO: $0) }
         )
     }
     

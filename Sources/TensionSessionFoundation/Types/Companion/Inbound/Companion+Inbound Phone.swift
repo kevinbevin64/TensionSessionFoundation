@@ -128,12 +128,7 @@ extension Companion {
             where: { $0.id2 == formerWorkout.id2 }
         ) {
 
-            var formerWorkout = formerWorkout
-            formerWorkout.unsortedExercises.sort { $0.order < $1.order }
-
-            var phoneWorkoutDTO = phoneWorkout.getDTO()
-            phoneWorkoutDTO.unsortedExercises.sort { $0.order < $1.order }
-
+            let phoneWorkoutDTO = phoneWorkout.getDTO()
             let approved = formerWorkout == phoneWorkoutDTO
 
             if approved {
