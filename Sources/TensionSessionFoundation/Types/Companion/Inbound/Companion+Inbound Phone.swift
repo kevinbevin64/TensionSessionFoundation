@@ -129,9 +129,6 @@ extension Companion {
         ) {
 
             let phoneWorkoutDTO = phoneWorkout.getDTO()
-
-            // Workout order is ignored because editTemplate(accordingTo:) doesn't sync it,
-            // so the watch's order can be stale
             let approved = formerWorkout.id2 == phoneWorkoutDTO.id2
                 && formerWorkout.name == phoneWorkoutDTO.name
                 && formerWorkout.state == phoneWorkoutDTO.state

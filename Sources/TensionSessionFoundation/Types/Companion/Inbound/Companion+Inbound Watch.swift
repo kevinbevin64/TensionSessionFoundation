@@ -97,7 +97,13 @@ extension Companion {
             workoutManager?.editTemplate(accordingTo: Workout(fromDTO: workout))
 
         case .nonexistent(id2: let id2):
-            receiveTemplateToBeDeleted(id2)
+            guard let workout = workoutManager?.unsortedTemplates.first(
+                where: { $0.id2 == id2 }
+            ) else {
+                return
+            }
+
+            workoutManager?.deleteTemplate(workout)
         }
     }
 
