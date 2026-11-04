@@ -133,7 +133,6 @@ final public class DataDelegate {
             try? self.context.save()
         }
         
-        // Must happen before historical workouts are synced by id2
         workoutManager.makeHistoricalWorkoutId2sUnique()
     }
 }

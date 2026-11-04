@@ -16,7 +16,6 @@ public final class WorkoutManager {
         unsortedTemplates.sorted { $0.order < $1.order }
     }
     
-    /// Most recent first.
     @Transient
     public var sortedHistory: [Workout] {
         unsortedHistory.sorted {

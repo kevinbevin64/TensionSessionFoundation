@@ -11,7 +11,6 @@ extension SyncStatus {
         
         case matched
         
-        /// Every historical workout the phone has.
         case notMatched([Workout.DTO])
     }
 }

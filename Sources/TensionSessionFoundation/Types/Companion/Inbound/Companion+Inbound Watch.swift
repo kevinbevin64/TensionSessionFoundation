@@ -78,7 +78,6 @@ extension Companion {
         workoutManager?.addHistoricalWorkouts(workouts.map { Workout(fromDTO: $0) })
     }
     
-    /// Takes in whatever the phone has, then sends back whatever the phone is missing.
     func receiveHistoricalWorkoutsHashCheckReply(_ syncStatus: SyncStatus.HistoricalWorkouts) {
         
         guard case .notMatched(let phoneWorkouts) = syncStatus,
