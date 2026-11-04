@@ -10,6 +10,7 @@ import WatchConnectivity
 public extension Companion {
     
     func activate() {
+        
         let session = WCSession.default
         session.delegate = self
         session.activate()
@@ -18,7 +19,7 @@ public extension Companion {
     nonisolated func session(
         _ session: WCSession,
         activationDidCompleteWith activationState: WCSessionActivationState,
-        error: (any Swift.Error)?
+        error: (any Error)?
     ) {
         
         switch activationState {
@@ -27,22 +28,9 @@ public extension Companion {
             print("Activation completed, ending with activated state.")
             #if os(watchOS)
             DispatchQueue.main.async { [weak self] in
-                self?.sendInstantly(["Hello there": "HELLO?"])
-                self?.startTimer(.seconds(3)) {
-                    self?.requestTemplateWorkoutsHashCheck()
-                }
-                
-                guard let self else { return }
-                
-                self.requestExerciseCatalogHashCheckSchedule = {
-                    let schedule = Schedule { [weak self] in
-                        self?.requestExerciseCatalogHashCheck()
-                    }
-                    schedule.invoke(after: .seconds(3))
-                    return schedule
-                }()
+                self?.scheduleHashChecks()
             }
-            #endif
+            #endif // os(watchOS)
             
         case .inactive:
             print("Activation completed, ending with inactive state.")
@@ -55,9 +43,7 @@ public extension Companion {
         }
         
         if let error {
-            print("Error: \(error.localizedDescription)")
-        } else {
-            print("Error: nil")
+            print("Activation error: \(error.localizedDescription)")
         }
         
         updateStateProperties(session)
@@ -81,7 +67,20 @@ public extension Companion {
 
 #if os(watchOS)
 extension Companion {
-
-
+    
+    func scheduleHashChecks() {
+        
+        let templateSchedule = Schedule { [weak self] in
+            self?.requestTemplateWorkoutsHashCheck()
+        }
+        templateSchedule.invoke(after: .seconds(3))
+        requestTemplateWorkoutsHashCheckSchedule = templateSchedule
+        
+        let catalogSchedule = Schedule { [weak self] in
+            self?.requestExerciseCatalogHashCheck()
+        }
+        catalogSchedule.invoke(after: .seconds(3))
+        requestExerciseCatalogHashCheckSchedule = catalogSchedule
+    }
 }
 #endif // os(watchOS)
