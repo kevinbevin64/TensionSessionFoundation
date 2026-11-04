@@ -75,9 +75,7 @@ extension Companion {
         requestHistoricalWorkoutsHashCheckSchedule = historySchedule
     }
 }
-#endif // os(iOS)
-
-#if os(watchOS)
+#elseif os(watchOS)
 extension Companion {
     
     func scheduleHashChecks() {
