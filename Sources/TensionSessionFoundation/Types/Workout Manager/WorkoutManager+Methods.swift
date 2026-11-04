@@ -125,17 +125,14 @@ public extension WorkoutManager {
     
     func getHistoricalWorkoutsHash() -> HistoricalWorkoutsHash {
         
+        let dtos = sortedHistory.map { $0.getDTO() }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
-        let workoutDigests = unsortedHistory
-            .map { workout in
-                let data = try? encoder.encode(workout.getDTO())
-                return Data(SHA256.hash(data: data ?? Data()))
-            }
-            .sorted { $0.lexicographicallyPrecedes($1) }
-        let digest = Data(SHA256.hash(data: workoutDigests.reduce(Data(), +)))
+        let data = try? encoder.encode(dtos)
+        let digest = Data(SHA256.hash(data: data ?? Data()))
+        let hash = HistoricalWorkoutsHash(digest: digest)
         
-        return HistoricalWorkoutsHash(digest: digest)
+        return hash
     }
     
     func add(_ workout: Workout) {
