@@ -19,7 +19,14 @@ public final class WorkoutManager {
     @Transient
     public var sortedHistory: [Workout] {
         unsortedHistory.sorted {
-            ($0.startInstant ?? .distantPast) > ($1.startInstant ?? .distantPast)
+            
+            guard let firstInstant = $0.startInstant,
+                  let secondInstant = $1.startInstant else {
+                assertionFailure()
+                return true
+            }
+            
+            return firstInstant > secondInstant
         }
     }
     
