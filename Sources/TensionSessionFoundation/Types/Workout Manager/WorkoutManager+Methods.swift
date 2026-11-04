@@ -224,24 +224,6 @@ extension WorkoutManager {
         try? save()
     }
     
-    func makeHistoricalWorkoutId2sUnique() {
-        
-        var seenId2s = Set<UUID>()
-        var didChange = false
-        
-        for workout in sortedHistory.reversed() {
-            if seenId2s.insert(workout.id2).inserted == false {
-                workout.id2 = UUID()
-                seenId2s.insert(workout.id2)
-                didChange = true
-            }
-        }
-        
-        if didChange {
-            try? save()
-        }
-    }
-    
     func overwriteTemplates(_ templates: [Workout]) {
         
         print("Overwriting templates with \(templates.count) templates")

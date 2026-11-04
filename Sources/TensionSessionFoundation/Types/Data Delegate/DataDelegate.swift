@@ -131,7 +131,5 @@ final public class DataDelegate {
         self.workoutManager.save = {
             try? self.context.save()
         }
-        
-        workoutManager.makeHistoricalWorkoutId2sUnique()
     }
 }
