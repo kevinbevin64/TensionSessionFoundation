@@ -30,8 +30,8 @@ extension Companion {
 
         switch operation {
 
-        case .addHistoricalWorkouts(let workouts):
-            receiveHistoricalWorkouts(workouts)
+        case .addHistoricalWorkout(let workout):
+            receiveHistoricalWorkout(workout)
 
         case .historicalWorkoutsHashCheckRequest(let hash):
             replyHandler(receiveHistoricalWorkoutsHashCheckRequest(hash))

@@ -19,7 +19,7 @@ extension SyncInstruction.Operation {
         case editExerciseCatalog(catalog: Exercise.Catalog.DTO)
         case templateWorkoutEditApproval(status: ApprovalStatus.TemplateWorkout)
 
-        case addHistoricalWorkouts(workouts: [Workout.DTO])
+        case addHistoricalWorkout(workout: Workout.DTO)
         case historicalWorkoutsHashCheckRequest(hash: WorkoutManager.HistoricalWorkoutsHash)
         case historicalWorkoutsHashCheckReply(status: SyncStatus.HistoricalWorkouts)
 

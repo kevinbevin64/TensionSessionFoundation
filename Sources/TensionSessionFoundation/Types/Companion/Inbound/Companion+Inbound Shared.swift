@@ -54,9 +54,9 @@ extension Companion {
 
 extension Companion {
     
-    func receiveHistoricalWorkouts(_ workouts: [Workout.DTO]) {
+    func receiveHistoricalWorkout(_ workout: Workout.DTO) {
         
-        workoutManager?.addHistoricalWorkouts(workouts.map { Workout(fromDTO: $0) })
+        workoutManager?.addHistoricalWorkout(Workout(fromDTO: workout))
     }
     
     func historicalWorkoutsHashCheckStatus(
@@ -86,7 +86,12 @@ extension Companion {
             counterpartWorkouts.contains($0.getDTO()) == false
         }
         
-        workoutManager.addHistoricalWorkouts(counterpartWorkouts.map { Workout(fromDTO: $0) })
-        addHistoricalWorkouts(missingOnCounterpart)
+        for workout in counterpartWorkouts {
+            workoutManager.addHistoricalWorkout(Workout(fromDTO: workout))
+        }
+        
+        for workout in missingOnCounterpart {
+            addHistoricalWorkout(workout)
+        }
     }
 }

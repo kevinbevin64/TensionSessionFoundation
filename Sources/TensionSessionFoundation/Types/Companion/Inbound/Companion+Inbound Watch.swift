@@ -44,8 +44,8 @@ extension Companion {
         case .userInfoEditOverwrite(userInfo: let userInfo):
             receiveUserInfoOverwrite(userInfo)
 
-        case .addHistoricalWorkouts(let workouts):
-            receiveHistoricalWorkouts(workouts)
+        case .addHistoricalWorkout(let workout):
+            receiveHistoricalWorkout(workout)
 
         case .historicalWorkoutsHashCheckRequest(let hash):
             receiveHistoricalWorkoutsHashCheckRequest(hash)

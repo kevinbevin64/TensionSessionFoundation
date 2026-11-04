@@ -71,7 +71,7 @@ public extension WorkoutManager {
         
         try? save()
         
-        companion?.addHistoricalWorkouts([workout])
+        companion?.addHistoricalWorkout(workout)
     }
     
     func freshTemplate() -> Workout? {
@@ -210,29 +210,20 @@ extension WorkoutManager {
         try? save()
     }
     
-    func addHistoricalWorkouts(_ workouts: [Workout]) {
+    func addHistoricalWorkout(_ workout: Workout) {
         
-        var existingWorkouts = unsortedHistory.map { $0.getDTO() }
-        var didAdd = false
-        
-        for workout in workouts {
-            
-            guard workout.state == .ended, workout.startInstant != nil else {
-                assertionFailure("Received an unfinished historical workout")
-                continue
-            }
-            
-            let dto = workout.getDTO()
-            guard existingWorkouts.contains(dto) == false else { continue }
-            
-            existingWorkouts.append(dto)
-            unsortedHistory.append(workout)
-            didAdd = true
+        guard workout.state == .ended, workout.startInstant != nil else {
+            assertionFailure("Received an unfinished historical workout")
+            return
         }
         
-        if didAdd {
-            try? save()
+        let dto = workout.getDTO()
+        guard unsortedHistory.contains(where: { $0.getDTO() == dto }) == false else {
+            return
         }
+        
+        unsortedHistory.append(workout)
+        try? save()
     }
     
     func makeHistoricalWorkoutId2sUnique() {

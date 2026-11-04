@@ -9,7 +9,7 @@ extension SyncInstruction.Operation {
     
     enum WatchToPhone: Codable {
         
-        case addHistoricalWorkouts(workouts: [Workout.DTO])
+        case addHistoricalWorkout(workout: Workout.DTO)
         case historicalWorkoutsHashCheckRequest(hash: WorkoutManager.HistoricalWorkoutsHash)
         case historicalWorkoutsHashCheckReply(status: SyncStatus.HistoricalWorkouts)
         case templateWorkoutsHashCheckRequest(hash: WorkoutManager.TemplateWorkoutsHash)
