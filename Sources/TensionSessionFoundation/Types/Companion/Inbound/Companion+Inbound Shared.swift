@@ -51,3 +51,42 @@ extension Companion {
         }
     }
 }
+
+extension Companion {
+    
+    func receiveHistoricalWorkouts(_ workouts: [Workout.DTO]) {
+        
+        workoutManager?.addHistoricalWorkouts(workouts.map { Workout(fromDTO: $0) })
+    }
+    
+    func historicalWorkoutsHashCheckStatus(
+        comparedWith hash: WorkoutManager.HistoricalWorkoutsHash
+    ) -> SyncStatus.HistoricalWorkouts? {
+        
+        guard let workoutManager else {
+            assertionFailure()
+            return nil
+        }
+        
+        if hash == workoutManager.getHistoricalWorkoutsHash() {
+            return .matched
+        } else {
+            return .notMatched(workoutManager.sortedHistory.map { $0.getDTO() })
+        }
+    }
+    
+    func receiveHistoricalWorkoutsHashCheckReply(_ syncStatus: SyncStatus.HistoricalWorkouts) {
+        
+        guard case .notMatched(let counterpartWorkouts) = syncStatus,
+              let workoutManager else {
+            return
+        }
+        
+        let missingOnCounterpart = workoutManager.unsortedHistory.filter {
+            counterpartWorkouts.contains($0.getDTO()) == false
+        }
+        
+        workoutManager.addHistoricalWorkouts(counterpartWorkouts.map { Workout(fromDTO: $0) })
+        addHistoricalWorkouts(missingOnCounterpart)
+    }
+}

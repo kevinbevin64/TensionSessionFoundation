@@ -32,5 +32,15 @@ public extension Companion {
 
         send(.editUserInfo(userInfo: userInfo.getDTO()))
     }
+
+    func requestHistoricalWorkoutsHashCheck() {
+
+        guard let hash = workoutManager?.getHistoricalWorkoutsHash() else {
+            assertionFailure()
+            return
+        }
+
+        send(.historicalWorkoutsHashCheckRequest(hash: hash))
+    }
 }
 #endif // os(iOS)

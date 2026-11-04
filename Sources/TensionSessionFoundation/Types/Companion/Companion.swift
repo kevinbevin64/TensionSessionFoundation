@@ -45,6 +45,8 @@ public final class Companion: NSObject, WCSessionDelegate {
 
     public var editUserInfo: ((UserInfo.DTO) -> Void)?
 
+    var requestHistoricalWorkoutsHashCheckSchedule: Schedule?
+
     #if os(iOS) // MARK: iOS
 
     public var isPaired: Bool?
@@ -58,8 +60,6 @@ public final class Companion: NSObject, WCSessionDelegate {
     var requestTemplateWorkoutsHashCheckSchedule: Schedule?
     
     var requestExerciseCatalogHashCheckSchedule: Schedule?
-    
-    var requestHistoricalWorkoutsHashCheckSchedule: Schedule?
 
     public var editCatalog: ((Exercise.Catalog.DTO) -> Void)?
 

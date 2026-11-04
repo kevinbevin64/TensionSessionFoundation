@@ -36,6 +36,9 @@ extension Companion {
         case .historicalWorkoutsHashCheckRequest(let hash):
             replyHandler(receiveHistoricalWorkoutsHashCheckRequest(hash))
 
+        case .historicalWorkoutsHashCheckReply(let status):
+            receiveHistoricalWorkoutsHashCheckReply(status)
+
         case .templateWorkoutsHashCheckRequest(let hash):
             replyHandler(receiveTemplateWorkoutsHashCheckRequest(hash))
 
@@ -57,27 +60,12 @@ extension Companion {
 
 extension Companion {
 
-    func receiveHistoricalWorkouts(_ workouts: [Workout.DTO]) {
-
-        workoutManager?.addHistoricalWorkouts(workouts.map { Workout(fromDTO: $0) })
-    }
-
     func receiveHistoricalWorkoutsHashCheckRequest(
         _ watchHash: WorkoutManager.HistoricalWorkoutsHash
     ) -> [String: Any] {
 
-        guard let workoutManager else {
-            assertionFailure()
+        guard let syncStatus = historicalWorkoutsHashCheckStatus(comparedWith: watchHash) else {
             return [:]
-        }
-
-        let phoneHash = workoutManager.getHistoricalWorkoutsHash()
-        let syncStatus: SyncStatus.HistoricalWorkouts
-
-        if watchHash == phoneHash {
-            syncStatus = .matched
-        } else {
-            syncStatus = .notMatched(workoutManager.sortedHistory.map { $0.getDTO() })
         }
 
         let operation = SyncInstruction.Outbound.historicalWorkoutsHashCheckReply(status: syncStatus)

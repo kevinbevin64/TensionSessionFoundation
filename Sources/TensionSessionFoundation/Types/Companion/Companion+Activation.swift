@@ -26,11 +26,9 @@ public extension Companion {
         
         case .activated:
             print("Activation completed, ending with activated state.")
-            #if os(watchOS)
             DispatchQueue.main.async { [weak self] in
                 self?.scheduleHashChecks()
             }
-            #endif // os(watchOS)
             
         case .inactive:
             print("Activation completed, ending with inactive state.")
@@ -61,6 +59,20 @@ public extension Companion {
     nonisolated func sessionDidDeactivate(_ session: WCSession) {
         
         updateStateProperties(session)
+    }
+}
+#endif // os(iOS)
+
+#if os(iOS)
+extension Companion {
+    
+    func scheduleHashChecks() {
+        
+        let historySchedule = Schedule { [weak self] in
+            self?.requestHistoricalWorkoutsHashCheck()
+        }
+        historySchedule.invoke(after: .seconds(3))
+        requestHistoricalWorkoutsHashCheckSchedule = historySchedule
     }
 }
 #endif // os(iOS)
