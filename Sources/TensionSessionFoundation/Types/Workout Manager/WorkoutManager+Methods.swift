@@ -60,7 +60,6 @@ public extension WorkoutManager {
         assert(templateBuffer.isReadyToEvictFinishedWorkout)
         
         workout.id2 = UUID()
-        workout.order = 0
         
         unsortedHistory.append(workout)
         
