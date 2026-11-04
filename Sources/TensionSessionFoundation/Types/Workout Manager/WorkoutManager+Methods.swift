@@ -60,6 +60,7 @@ public extension WorkoutManager {
         assert(templateBuffer.isReadyToEvictFinishedWorkout)
         
         workout.id2 = UUID()
+        workout.order = 0
         
         unsortedHistory.append(workout)
         
@@ -127,11 +128,15 @@ public extension WorkoutManager {
     
     func getHistoricalWorkoutsHash() -> HistoricalWorkoutsHash {
         
-        let id2s = unsortedHistory
-            .map { $0.id2.uuidString }
-            .sorted()
-            .joined(separator: ",")
-        let digest = Data(SHA256.hash(data: Data(id2s.utf8)))
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let workoutDigests = unsortedHistory
+            .map { workout in
+                let data = try? encoder.encode(workout.getDTO())
+                return Data(SHA256.hash(data: data ?? Data()))
+            }
+            .sorted { $0.lexicographicallyPrecedes($1) }
+        let digest = Data(SHA256.hash(data: workoutDigests.reduce(Data(), +)))
         
         return HistoricalWorkoutsHash(digest: digest)
     }
@@ -208,7 +213,7 @@ extension WorkoutManager {
     
     func addHistoricalWorkouts(_ workouts: [Workout]) {
         
-        var existingId2s = Set(unsortedHistory.map(\.id2))
+        var existingWorkouts = unsortedHistory.map { $0.getDTO() }
         var didAdd = false
         
         for workout in workouts {
@@ -218,8 +223,10 @@ extension WorkoutManager {
                 continue
             }
             
-            guard existingId2s.insert(workout.id2).inserted else { continue }
+            let dto = workout.getDTO()
+            guard existingWorkouts.contains(dto) == false else { continue }
             
+            existingWorkouts.append(dto)
             unsortedHistory.append(workout)
             didAdd = true
         }

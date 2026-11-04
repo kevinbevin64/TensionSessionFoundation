@@ -85,9 +85,8 @@ extension Companion {
             return
         }
         
-        let phoneId2s = Set(phoneWorkouts.map(\.id2))
         let missingOnPhone = workoutManager.unsortedHistory.filter {
-            phoneId2s.contains($0.id2) == false
+            phoneWorkouts.contains($0.getDTO()) == false
         }
         
         workoutManager.addHistoricalWorkouts(phoneWorkouts.map { Workout(fromDTO: $0) })
