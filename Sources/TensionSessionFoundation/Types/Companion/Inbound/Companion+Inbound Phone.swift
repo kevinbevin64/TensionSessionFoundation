@@ -30,8 +30,11 @@ extension Companion {
 
         switch operation {
 
-        case .addHistoricalWorkout:
-            assertionFailure("Receiving historical workouts isn't supported yet")
+        case .addHistoricalWorkouts(let workouts):
+            receiveHistoricalWorkouts(workouts)
+
+        case .historicalWorkoutsHashCheckRequest(let hash):
+            replyHandler(receiveHistoricalWorkoutsHashCheckRequest(hash))
 
         case .templateWorkoutsHashCheckRequest(let hash):
             replyHandler(receiveTemplateWorkoutsHashCheckRequest(hash))
@@ -53,6 +56,39 @@ extension Companion {
 }
 
 extension Companion {
+
+    func receiveHistoricalWorkouts(_ workouts: [Workout.DTO]) {
+
+        workoutManager?.addHistoricalWorkouts(workouts.map { Workout(fromDTO: $0) })
+    }
+
+    func receiveHistoricalWorkoutsHashCheckRequest(
+        _ watchHash: WorkoutManager.HistoricalWorkoutsHash
+    ) -> [String: Any] {
+
+        guard let workoutManager else {
+            assertionFailure()
+            return [:]
+        }
+
+        let phoneHash = workoutManager.getHistoricalWorkoutsHash()
+        let syncStatus: SyncStatus.HistoricalWorkouts
+
+        if watchHash == phoneHash {
+            syncStatus = .matched
+        } else {
+            syncStatus = .notMatched(workoutManager.sortedHistory.map { $0.getDTO() })
+        }
+
+        let operation = SyncInstruction.Outbound.historicalWorkoutsHashCheckReply(status: syncStatus)
+        let dictionary = try? SyncInstruction(operation).dictionaryForm()
+        guard let dictionary else {
+            assertionFailure()
+            return [:]
+        }
+
+        return dictionary
+    }
 
     func receiveTemplateWorkoutsHashCheckRequest(
         _ watchHash: WorkoutManager.TemplateWorkoutsHash

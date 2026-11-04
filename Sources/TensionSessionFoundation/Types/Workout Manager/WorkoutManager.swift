@@ -16,19 +16,13 @@ public final class WorkoutManager {
         unsortedTemplates.sorted { $0.order < $1.order }
     }
     
+    /// Most recent first.
     @Transient
-    public lazy var sortedHistory: [Workout] = {
-        return unsortedHistory.sorted {
-            
-            guard let firstInstant = $0.startInstant,
-                  let secondInstant = $1.startInstant else {
-                assertionFailure()
-                return true
-            }
-            
-            return firstInstant > secondInstant
+    public var sortedHistory: [Workout] {
+        unsortedHistory.sorted {
+            ($0.startInstant ?? .distantPast) > ($1.startInstant ?? .distantPast)
         }
-    }()
+    }
     
     @Relationship(deleteRule: .cascade)
     public var unsortedTemplates: [Workout]

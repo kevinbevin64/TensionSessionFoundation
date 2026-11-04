@@ -116,6 +116,7 @@ final public class DataDelegate {
         
         companion = Companion()
         companion.workoutManager = self.workoutManager
+        workoutManager.companion = companion
         companion.getExerciseCatalogDTO = {
             return self.catalog.getDTO()
         }
@@ -131,5 +132,8 @@ final public class DataDelegate {
         self.workoutManager.save = {
             try? self.context.save()
         }
+        
+        // Must happen before historical workouts are synced by id2
+        workoutManager.makeHistoricalWorkoutId2sUnique()
     }
 }

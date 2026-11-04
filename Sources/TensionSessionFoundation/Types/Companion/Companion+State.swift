@@ -85,6 +85,7 @@ public extension Companion {
                 if self?.isReachable == false && isReachable == true {
                     self?.requestTemplateWorkoutsHashCheck()
                     self?.requestExerciseCatalogHashCheck()
+                    self?.requestHistoricalWorkoutsHashCheck()
                 }
             }
         }

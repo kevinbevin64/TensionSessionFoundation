@@ -81,6 +81,12 @@ extension Companion {
         }
         catalogSchedule.invoke(after: .seconds(3))
         requestExerciseCatalogHashCheckSchedule = catalogSchedule
+        
+        let historySchedule = Schedule { [weak self] in
+            self?.requestHistoricalWorkoutsHashCheck()
+        }
+        historySchedule.invoke(after: .seconds(3))
+        requestHistoricalWorkoutsHashCheckSchedule = historySchedule
     }
 }
 #endif // os(watchOS)

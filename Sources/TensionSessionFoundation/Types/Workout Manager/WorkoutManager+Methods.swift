@@ -59,17 +59,11 @@ public extension WorkoutManager {
         guard let workout = templateBuffer.selection else { return }
         assert(templateBuffer.isReadyToEvictFinishedWorkout)
         
+        // The buffer copies the template's id2 when starting, so give each
+        // historical workout its own identity before remembering it.
+        workout.id2 = UUID()
+        
         unsortedHistory.append(workout)
-        sortedHistory = unsortedHistory.sorted {
-            
-            guard let firstInstant = $0.startInstant,
-                  let secondInstant = $1.startInstant else {
-                assertionFailure()
-                return true
-            }
-            
-            return firstInstant > secondInstant
-        }
         
         if let freshTemplate = freshTemplate() {
             templateBuffer.insert(freshTemplate)
@@ -78,6 +72,8 @@ public extension WorkoutManager {
         }
         
         try? save()
+        
+        companion?.addHistoricalWorkouts([workout])
     }
     
     func freshTemplate() -> Workout? {
@@ -129,6 +125,19 @@ public extension WorkoutManager {
         let hash = TemplateWorkoutsHash(digest: digest)
         
         return hash
+    }
+    
+    /// Historical workouts can't be edited or deleted, so two histories are equal
+    /// exactly when they contain the same set of id2s.
+    func getHistoricalWorkoutsHash() -> HistoricalWorkoutsHash {
+        
+        let id2s = unsortedHistory
+            .map { $0.id2.uuidString }
+            .sorted()
+            .joined(separator: ",")
+        let digest = Data(SHA256.hash(data: Data(id2s.utf8)))
+        
+        return HistoricalWorkoutsHash(digest: digest)
     }
     
     func add(_ workout: Workout) {
@@ -199,6 +208,51 @@ extension WorkoutManager {
         }
         
         try? save()
+    }
+    
+    /// Inserts the historical workouts that aren't already present, matching by id2.
+    func addHistoricalWorkouts(_ workouts: [Workout]) {
+        
+        var existingId2s = Set(unsortedHistory.map(\.id2))
+        var didAdd = false
+        
+        for workout in workouts {
+            
+            guard workout.state == .ended, workout.startInstant != nil else {
+                assertionFailure("Received an unfinished historical workout")
+                continue
+            }
+            
+            guard existingId2s.insert(workout.id2).inserted else { continue }
+            
+            unsortedHistory.append(workout)
+            didAdd = true
+        }
+        
+        if didAdd {
+            try? save()
+        }
+    }
+    
+    /// Workouts recorded before historical syncing shared their template's id2,
+    /// so several historical workouts may have the same id2. Re-identify every
+    /// duplicate after the first so id2 can be used to merge histories.
+    func makeHistoricalWorkoutId2sUnique() {
+        
+        var seenId2s = Set<UUID>()
+        var didChange = false
+        
+        for workout in sortedHistory.reversed() {
+            if seenId2s.insert(workout.id2).inserted == false {
+                workout.id2 = UUID()
+                seenId2s.insert(workout.id2)
+                didChange = true
+            }
+        }
+        
+        if didChange {
+            try? save()
+        }
     }
     
     func overwriteTemplates(_ templates: [Workout]) {

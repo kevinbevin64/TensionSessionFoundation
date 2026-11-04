@@ -58,6 +58,8 @@ public final class Companion: NSObject, WCSessionDelegate {
     var requestTemplateWorkoutsHashCheckSchedule: Schedule?
     
     var requestExerciseCatalogHashCheckSchedule: Schedule?
+    
+    var requestHistoricalWorkoutsHashCheckSchedule: Schedule?
 
     public var editCatalog: ((Exercise.Catalog.DTO) -> Void)?
 

@@ -43,6 +43,12 @@ extension Companion {
 
         case .userInfoEditOverwrite(userInfo: let userInfo):
             receiveUserInfoOverwrite(userInfo)
+
+        case .addHistoricalWorkouts(let workouts):
+            receiveHistoricalWorkouts(workouts)
+
+        case .historicalWorkoutsHashCheckReply(let status):
+            receiveHistoricalWorkoutsHashCheckReply(status)
         }
     }
     
@@ -65,6 +71,28 @@ extension Companion {
         }
         
         workoutManager?.deleteTemplate(workout)
+    }
+    
+    func receiveHistoricalWorkouts(_ workouts: [Workout.DTO]) {
+        
+        workoutManager?.addHistoricalWorkouts(workouts.map { Workout(fromDTO: $0) })
+    }
+    
+    /// Takes in whatever the phone has, then sends back whatever the phone is missing.
+    func receiveHistoricalWorkoutsHashCheckReply(_ syncStatus: SyncStatus.HistoricalWorkouts) {
+        
+        guard case .notMatched(let phoneWorkouts) = syncStatus,
+              let workoutManager else {
+            return
+        }
+        
+        let phoneId2s = Set(phoneWorkouts.map(\.id2))
+        let missingOnPhone = workoutManager.unsortedHistory.filter {
+            phoneId2s.contains($0.id2) == false
+        }
+        
+        workoutManager.addHistoricalWorkouts(phoneWorkouts.map { Workout(fromDTO: $0) })
+        addHistoricalWorkouts(missingOnPhone)
     }
     
     func receiveTemplateWorkoutsHashCheckReply(_ syncStatus: SyncStatus.TemplateWorkouts) {

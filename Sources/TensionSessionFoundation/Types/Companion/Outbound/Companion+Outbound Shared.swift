@@ -9,6 +9,13 @@ import WatchConnectivity
 
 extension Companion {
     
+    func addHistoricalWorkouts(_ workouts: [Workout]) {
+        
+        guard workouts.isEmpty == false else { return }
+        
+        send(.addHistoricalWorkouts(workouts: workouts.map { $0.getDTO() }))
+    }
+    
     func send(_ operation: SyncInstruction.Outbound) {
 
         let dictionary = try? SyncInstruction(operation).dictionaryForm()
