@@ -116,7 +116,6 @@ final public class DataDelegate {
         
         companion = Companion()
         companion.workoutManager = self.workoutManager
-        workoutManager.companion = companion
         companion.getExerciseCatalogDTO = {
             return self.catalog.getDTO()
         }

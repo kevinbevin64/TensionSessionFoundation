@@ -70,8 +70,6 @@ public extension WorkoutManager {
         }
         
         try? save()
-        
-        companion?.addHistoricalWorkout(workout)
     }
     
     func freshTemplate() -> Workout? {

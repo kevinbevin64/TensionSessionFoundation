@@ -9,7 +9,7 @@ import WatchConnectivity
 
 extension Companion {
     
-    func addHistoricalWorkout(_ workout: Workout) {
+    public func addHistoricalWorkout(_ workout: Workout) {
         
         send(.addHistoricalWorkout(workout: workout.getDTO()))
     }
