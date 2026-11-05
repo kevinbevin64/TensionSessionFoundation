@@ -208,7 +208,7 @@ extension WorkoutManager {
     func addHistoricalWorkout(_ workout: Workout) {
         
         guard workout.state == .ended, workout.startInstant != nil else {
-            assertionFailure("Received an unfinished historical workout")
+            assertionFailure()
             return
         }
         
