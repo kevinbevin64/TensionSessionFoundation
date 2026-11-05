@@ -48,7 +48,7 @@ extension Companion {
             receiveHistoricalWorkout(workout)
 
         case .historicalWorkoutsHashCheckRequest(let hash):
-            receiveHistoricalWorkoutsHashCheckRequest(hash)
+            send(dictionary: receiveHistoricalWorkoutsHashCheckRequest(hash))
 
         case .historicalWorkoutsHashCheckReply(let status):
             receiveHistoricalWorkoutsHashCheckReply(status)
@@ -74,15 +74,6 @@ extension Companion {
         }
         
         workoutManager?.deleteTemplate(workout)
-    }
-    
-    func receiveHistoricalWorkoutsHashCheckRequest(_ phoneHash: WorkoutManager.HistoricalWorkoutsHash) {
-        
-        guard let syncStatus = historicalWorkoutsHashCheckStatus(comparedWith: phoneHash) else {
-            return
-        }
-        
-        send(.historicalWorkoutsHashCheckReply(status: syncStatus))
     }
     
     func receiveTemplateWorkoutsHashCheckReply(_ syncStatus: SyncStatus.TemplateWorkouts) {
