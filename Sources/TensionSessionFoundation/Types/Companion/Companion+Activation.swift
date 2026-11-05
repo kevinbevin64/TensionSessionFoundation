@@ -63,23 +63,11 @@ public extension Companion {
 }
 #endif // os(iOS)
 
-#if os(iOS)
 extension Companion {
     
     func scheduleHashChecks() {
         
-        let historySchedule = Schedule { [weak self] in
-            self?.requestHistoricalWorkoutsHashCheck()
-        }
-        historySchedule.invoke(after: .seconds(3))
-        requestHistoricalWorkoutsHashCheckSchedule = historySchedule
-    }
-}
-#elseif os(watchOS)
-extension Companion {
-    
-    func scheduleHashChecks() {
-        
+        #if os(watchOS)
         let templateSchedule = Schedule { [weak self] in
             self?.requestTemplateWorkoutsHashCheck()
         }
@@ -91,6 +79,7 @@ extension Companion {
         }
         catalogSchedule.invoke(after: .seconds(3))
         requestExerciseCatalogHashCheckSchedule = catalogSchedule
+        #endif // os(watchOS)
         
         let historySchedule = Schedule { [weak self] in
             self?.requestHistoricalWorkoutsHashCheck()
@@ -99,4 +88,3 @@ extension Companion {
         requestHistoricalWorkoutsHashCheckSchedule = historySchedule
     }
 }
-#endif // os(watchOS)
