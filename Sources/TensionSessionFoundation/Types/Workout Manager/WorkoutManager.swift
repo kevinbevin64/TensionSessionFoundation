@@ -17,8 +17,8 @@ public final class WorkoutManager {
     }
     
     @Transient
-    public lazy var sortedHistory: [Workout] = {
-        return unsortedHistory.sorted {
+    public var sortedHistory: [Workout] {
+        unsortedHistory.sorted {
             
             guard let firstInstant = $0.startInstant,
                   let secondInstant = $1.startInstant else {
@@ -28,7 +28,7 @@ public final class WorkoutManager {
             
             return firstInstant > secondInstant
         }
-    }()
+    }
     
     @Relationship(deleteRule: .cascade)
     public var unsortedTemplates: [Workout]

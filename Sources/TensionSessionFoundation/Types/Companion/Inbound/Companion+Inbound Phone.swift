@@ -30,8 +30,14 @@ extension Companion {
 
         switch operation {
 
-        case .addHistoricalWorkout:
-            assertionFailure("Receiving historical workouts isn't supported yet")
+        case .addHistoricalWorkout(let workout):
+            receiveHistoricalWorkout(workout)
+
+        case .historicalWorkoutsHashCheckRequest(let hash):
+            replyHandler(receiveHistoricalWorkoutsHashCheckRequest(hash))
+
+        case .historicalWorkoutsHashCheckReply(let status):
+            receiveHistoricalWorkoutsHashCheckReply(status)
 
         case .templateWorkoutsHashCheckRequest(let hash):
             replyHandler(receiveTemplateWorkoutsHashCheckRequest(hash))

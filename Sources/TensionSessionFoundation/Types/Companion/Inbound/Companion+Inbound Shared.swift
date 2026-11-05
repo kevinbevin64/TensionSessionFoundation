@@ -8,6 +8,8 @@
 import Foundation
 import WatchConnectivity
 
+// MARK: Low level
+
 extension Companion {
     
     nonisolated
@@ -48,6 +50,78 @@ extension Companion {
             #elseif os(watchOS)
             self?.process(operation)
             #endif
+        }
+    }
+}
+
+// MARK: Called on received message
+
+extension Companion {
+    
+    func receiveHistoricalWorkout(_ workout: Workout.DTO) {
+
+        guard let workoutManager else {
+            assertionFailure()
+            return
+        }
+
+        workoutManager.addHistoricalWorkout(Workout(fromDTO: workout))
+    }
+
+    func receiveHistoricalWorkoutsHashCheckRequest(
+        _ senderHash: WorkoutManager.HistoricalWorkoutsHash
+    ) -> [String: Any] {
+
+        guard let workoutManager else {
+            assertionFailure()
+            return [:]
+        }
+
+        let receiverHash = workoutManager.getHistoricalWorkoutsHash()
+        let hashesMatch = receiverHash == senderHash
+        let syncStatus: SyncStatus.HistoricalWorkouts
+
+        if hashesMatch {
+            syncStatus = .matched
+        } else {
+            let receiverHistoricalWorkouts = workoutManager.sortedHistory.map { $0.getDTO() }
+            syncStatus = .notMatched(receiverHistoricalWorkouts)
+        }
+
+        let operation = SyncInstruction.Outbound.historicalWorkoutsHashCheckReply(
+            status: syncStatus
+        )
+        let dictionary = try? SyncInstruction(operation).dictionaryForm()
+        guard let dictionary else {
+            assertionFailure()
+            return [:]
+        }
+
+        return dictionary
+    }
+
+    func receiveHistoricalWorkoutsHashCheckReply(_ syncStatus: SyncStatus.HistoricalWorkouts) {
+
+        guard let workoutManager else {
+            assertionFailure()
+            return
+        }
+
+        guard case .notMatched(let companionHistoricalWorkouts) = syncStatus else {
+            return
+        }
+
+        let workoutsMissingHere: [Workout.DTO] = companionHistoricalWorkouts.filter { workout in
+            let workoutIsPresentHere = workoutManager.unsortedHistory.contains(where: {
+                $0.getDTO() == workout
+            })
+
+            if workoutIsPresentHere { return false }
+            return true
+        }
+
+        for workout in workoutsMissingHere {
+            workoutManager.addHistoricalWorkout(Workout(fromDTO: workout))
         }
     }
 }

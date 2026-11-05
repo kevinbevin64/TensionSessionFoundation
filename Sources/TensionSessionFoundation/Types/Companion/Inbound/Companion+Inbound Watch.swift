@@ -43,6 +43,15 @@ extension Companion {
 
         case .userInfoEditOverwrite(userInfo: let userInfo):
             receiveUserInfoOverwrite(userInfo)
+
+        case .addHistoricalWorkout(let workout):
+            receiveHistoricalWorkout(workout)
+
+        case .historicalWorkoutsHashCheckRequest(let hash):
+            send(dictionary: receiveHistoricalWorkoutsHashCheckRequest(hash))
+
+        case .historicalWorkoutsHashCheckReply(let status):
+            receiveHistoricalWorkoutsHashCheckReply(status)
         }
     }
     

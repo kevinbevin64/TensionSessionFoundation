@@ -45,6 +45,17 @@ public extension Companion {
     
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
         
+        if session.activationState == .activated {
+            
+            let isReachable = session.isReachable
+            
+            DispatchQueue.main.async { [weak self] in
+                if self?.isReachable == false && isReachable == true {
+                    self?.requestHistoricalWorkoutsHashCheck()
+                }
+            }
+        }
+        
         updateStateProperties(session)
     }
 }
@@ -85,6 +96,7 @@ public extension Companion {
                 if self?.isReachable == false && isReachable == true {
                     self?.requestTemplateWorkoutsHashCheck()
                     self?.requestExerciseCatalogHashCheck()
+                    self?.requestHistoricalWorkoutsHashCheck()
                 }
             }
         }
