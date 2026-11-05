@@ -59,17 +59,9 @@ public extension WorkoutManager {
         guard let workout = templateBuffer.selection else { return }
         assert(templateBuffer.isReadyToEvictFinishedWorkout)
         
+        workout.id2 = UUID()
+        
         unsortedHistory.append(workout)
-        sortedHistory = unsortedHistory.sorted {
-            
-            guard let firstInstant = $0.startInstant,
-                  let secondInstant = $1.startInstant else {
-                assertionFailure()
-                return true
-            }
-            
-            return firstInstant > secondInstant
-        }
         
         if let freshTemplate = freshTemplate() {
             templateBuffer.insert(freshTemplate)
@@ -121,16 +113,24 @@ public extension WorkoutManager {
     
     func getTemplateWorkoutsHash() -> TemplateWorkoutsHash {
         
-        let dtos = sortedTemplates.map { workout -> Workout.DTO in
-            var dto = workout.getDTO()
-            dto.unsortedExercises.sort { $0.order < $1.order }
-            return dto
-        }
+        let dtos = sortedTemplates.map { $0.getDTO() }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         let data = try? encoder.encode(dtos)
         let digest = Data(SHA256.hash(data: data ?? Data()))
         let hash = TemplateWorkoutsHash(digest: digest)
+        
+        return hash
+    }
+    
+    func getHistoricalWorkoutsHash() -> HistoricalWorkoutsHash {
+        
+        let dtos = sortedHistory.map { $0.getDTO() }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let data = try? encoder.encode(dtos)
+        let digest = Data(SHA256.hash(data: data ?? Data()))
+        let hash = HistoricalWorkoutsHash(digest: digest)
         
         return hash
     }
@@ -200,6 +200,21 @@ extension WorkoutManager {
             } else {
                 templateBuffer.clearSelection()
             }
+        }
+        
+        try? save()
+    }
+    
+    func addHistoricalWorkout(_ workout: Workout) {
+        
+        guard workout.state == .ended, workout.startInstant != nil else {
+            assertionFailure()
+            return
+        }
+        
+        let dto = workout.getDTO()
+        if unsortedHistory.contains(where: { $0.getDTO() == dto }) == false {
+            unsortedHistory.append(workout)
         }
         
         try? save()

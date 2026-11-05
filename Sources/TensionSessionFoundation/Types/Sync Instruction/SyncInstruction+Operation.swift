@@ -7,23 +7,10 @@
 
 extension SyncInstruction {
     
-    nonisolated
-    enum Operation: String, Codable {
+    enum Operation: Codable {
         
-        // iOS -> watchOS
+        case phoneToWatch(PhoneToWatch)
         
-        case addTemplateWorkout
-        case editTemplateWorkout
-        case deleteTemplateWorkout
-        case templateWorkoutsHashCheckReply
-        case exerciseCatalogHashCheckReply
-        case editExerciseCatalog
-        
-        // watchOS -> iOS
-        
-        case addHistoricalWorkout
-        case templateWorkoutsHashCheckRequest
-        case exerciseCatalogHashCheckRequest
-        case addCustomExerciseKindRequest
+        case watchToPhone(WatchToPhone)
     }
 }

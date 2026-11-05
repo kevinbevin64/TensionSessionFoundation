@@ -1,0 +1,32 @@
+//
+//  SyncInstruction+Operation+PhoneToWatch.swift
+//  TensionSessionFoundation
+//
+//  Created by Kevin on 10/22/26.
+//
+
+import Foundation
+
+extension SyncInstruction.Operation {
+    
+    enum PhoneToWatch: Codable {
+        
+        case addTemplateWorkout(workout: Workout.DTO)
+        case editTemplateWorkout(workout: Workout.DTO)
+        case deleteTemplateWorkout(id2: UUID)
+        case templateWorkoutsHashCheckReply(status: SyncStatus.TemplateWorkouts)
+        case exerciseCatalogHashCheckReply(status: SyncStatus.ExerciseCatalog)
+        case editExerciseCatalog(catalog: Exercise.Catalog.DTO)
+        case templateWorkoutEditApproval(status: ApprovalStatus.TemplateWorkout)
+
+        case addHistoricalWorkout(workout: Workout.DTO)
+        case historicalWorkoutsHashCheckRequest(hash: WorkoutManager.HistoricalWorkoutsHash)
+        case historicalWorkoutsHashCheckReply(status: SyncStatus.HistoricalWorkouts)
+
+        // User Info
+
+        case editUserInfo(userInfo: UserInfo.DTO)
+        case userInfoEditApproval(status: ApprovalStatus.UserInfo)
+        case userInfoEditOverwrite(userInfo: UserInfo.DTO)
+    }
+}
