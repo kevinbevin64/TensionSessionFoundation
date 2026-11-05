@@ -213,11 +213,9 @@ extension WorkoutManager {
         }
         
         let dto = workout.getDTO()
-        guard unsortedHistory.contains(where: { $0.getDTO() == dto }) == false else {
-            return
+        if unsortedHistory.contains(where: { $0.getDTO() == dto }) == false {
+            unsortedHistory.append(workout)
         }
-        
-        unsortedHistory.append(workout)
         
         try? save()
     }
