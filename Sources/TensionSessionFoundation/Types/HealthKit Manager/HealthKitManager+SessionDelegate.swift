@@ -8,27 +8,32 @@
 import HealthKit
 
 extension HKWorkoutManager: HKWorkoutSessionDelegate {
-    
+
     nonisolated public func workoutSession(
         _ workoutSession: HKWorkoutSession,
         didChangeTo toState: HKWorkoutSessionState,
         from fromState: HKWorkoutSessionState,
         date: Date
     ) {
-        let sessionID = ObjectIdentifier(workoutSession)
         Task { @MainActor in
-            sessionDidChange(sessionID, to: toState, at: date)
+            switch toState {
+            case .running:
+                self.state = .running
+            case .paused:
+                self.state = .paused
+            default:
+                break
+            }
         }
+
+        // Yield the state change synchronously so changes are handled in the order they happen.
+        stateChanges.continuation.yield(SessionStateChange(newState: toState, date: date))
     }
-    
+
     nonisolated public func workoutSession(
         _ workoutSession: HKWorkoutSession,
         didFailWithError error: Swift.Error
     ) {
-        let sessionID = ObjectIdentifier(workoutSession)
-        let description = error.localizedDescription
-        Task { @MainActor in
-            sessionDidFail(sessionID, withDescription: description)
-        }
+        print("Workout session failed: \(error)")
     }
 }

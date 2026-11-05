@@ -9,194 +9,132 @@ import Foundation
 import HealthKit
 import Observation
 
+// Follows Apple's "Building a workout app for iPhone and iPad" (WWDC25) and
+// "Build a workout app for Apple Watch" (WWDC21) samples.
 @Observable
 @MainActor
 public final class HKWorkoutManager: NSObject {
-    
-    public private(set) var stage: Stage = .idle
-    
-    private let healthStore = HKHealthStore()
-    
-    private var session: HKWorkoutSession?
-    
-    private var builder: HKLiveWorkoutBuilder?
-    
-    // What the caller last asked for. The session is moved toward it whenever its state changes.
-    private var target: Target = .ended
-    
-    private enum Target {
-        
-        case running
-        
-        case paused
-        
-        case ended
+
+    // Created in the nonisolated session delegate, so it can't be main-actor isolated.
+    nonisolated struct SessionStateChange: Sendable {
+        let newState: HKWorkoutSessionState
+        let date: Date
     }
-    
+
+    public private(set) var state: HKWorkoutSessionState = .notStarted
+
+    let healthStore = HKHealthStore()
+    var session: HKWorkoutSession?
+    var builder: HKLiveWorkoutBuilder?
+
+    // Keeps only the newest state change, so state changes are handled one at a time and in order.
+    let stateChanges = AsyncStream.makeStream(of: SessionStateChange.self, bufferingPolicy: .bufferingNewest(1))
+
     private static let workoutConfiguration: HKWorkoutConfiguration = {
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = .traditionalStrengthTraining
         configuration.locationType = .indoor
         return configuration
     }()
-    
-    override init() {
-        
+
+    public override init() {
         super.init()
-    }
-    
-    // MARK: Controls
-    
-    func start() {
-        
-        switch stage {
-        case .idle, .errored: break
-        default: return
-        }
-        
-        target = .running
-        stage = .starting
-        
         Task {
-            do {
-                try await Self.requestAuthorization()
-                guard Self.workoutAuthorization == .allowed else { throw Error.notAuthorized }
-                
-                guard target != .ended else {
-                    stage = .idle
-                    return
-                }
-                
-                let newSession = try HKWorkoutSession(
-                    healthStore: healthStore,
-                    configuration: Self.workoutConfiguration
-                )
-                let newBuilder = newSession.associatedWorkoutBuilder()
-                newSession.delegate = self
-                newBuilder.delegate = self
-                newBuilder.dataSource = HKLiveWorkoutDataSource(
-                    healthStore: healthStore,
-                    workoutConfiguration: Self.workoutConfiguration
-                )
-                session = newSession
-                builder = newBuilder
-                
-                let startDate = Date.now
-                newSession.startActivity(with: startDate)
-                try await newBuilder.beginCollection(at: startDate)
-            } catch let error as Error {
-                fail(with: error)
-            } catch {
-                fail(with: .failedToStart(error.localizedDescription))
+            for await change in stateChanges.stream {
+                await consumeSessionStateChange(change)
             }
         }
     }
-    
-    func pause() {
-        
-        guard target == .running else { return }
-        target = .paused
-        moveTowardTarget()
-    }
-    
-    func resume() {
-        
-        guard target == .paused else { return }
-        target = .running
-        moveTowardTarget()
-    }
-    
-    func end() {
-        
-        guard target != .ended else { return }
-        target = .ended
-        moveTowardTarget()
-    }
-    
-    private func moveTowardTarget() {
-        
-        guard let session else { return }
-        
-        switch (stage, target) {
-        case (.running, .paused):
-            session.pause()
-        case (.paused, .running):
-            session.resume()
-        case (.running, .ended), (.paused, .ended):
-            stage = .stopping
-            session.stopActivity(with: Date.now)
-        default:
-            break
-        }
-    }
-    
-    // MARK: Session events
-    
-    func sessionDidChange(
-        _ sessionID: ObjectIdentifier,
-        to state: HKWorkoutSessionState,
-        at date: Date
-    ) {
-        guard isCurrentSession(sessionID) else { return }
-        
-        switch state {
-        case .running:
-            stage = .running
-            moveTowardTarget()
-        case .paused:
-            stage = .paused
-            moveTowardTarget()
-        case .stopped:
-            finishWorkout(at: date)
-        case .ended:
-            resetSession()
-            if case .errored = stage { return }
-            stage = .idle
-        default:
-            break
-        }
-    }
-    
-    func sessionDidFail(_ sessionID: ObjectIdentifier, withDescription description: String) {
-        
-        guard isCurrentSession(sessionID) else { return }
-        fail(with: .sessionFailed(description))
-    }
-    
-    private func isCurrentSession(_ sessionID: ObjectIdentifier) -> Bool {
-        
-        guard let session else { return false }
-        return ObjectIdentifier(session) == sessionID
-    }
-    
-    // Saving follows Apple's order: stop, finish collecting, save, then end the session
-    private func finishWorkout(at endDate: Date) {
-        
-        guard let session, let builder else { return }
-        
+
+    // MARK: - Authorization
+
+    public func requestAuthorization() {
+        // The types to write to the health store.
+        let typesToShare: Set = [
+            HKQuantityType.workoutType()
+        ]
+
+        // The types to read from the health store.
+        let typesToRead: Set = [
+            HKQuantityType(.heartRate),
+            HKQuantityType(.activeEnergyBurned)
+        ]
+
         Task {
             do {
-                try await builder.endCollection(at: endDate)
-                _ = try await builder.finishWorkout()
+                try await healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead)
             } catch {
-                stage = .errored(.failedToSave(error.localizedDescription))
+                print("Failed to request authorization: \(error)")
             }
-            
-            session.end()
         }
     }
-    
-    private func fail(with error: Error) {
-        
-        session?.end()
-        resetSession()
-        target = .ended
-        stage = .errored(error)
+
+    // MARK: - State Control
+
+    public func start() {
+        let configuration = Self.workoutConfiguration
+
+        do {
+            session = try HKWorkoutSession(healthStore: healthStore, configuration: configuration)
+            builder = session?.associatedWorkoutBuilder()
+        } catch {
+            print("Failed to create workout session: \(error)")
+            return
+        }
+
+        session?.delegate = self
+        builder?.delegate = self
+        builder?.dataSource = HKLiveWorkoutDataSource(healthStore: healthStore, workoutConfiguration: configuration)
+
+        session?.prepare()
+
+        Task {
+            do {
+                // Start the workout session and begin data collection.
+                let startDate = Date()
+                session?.startActivity(with: startDate)
+                state = .running
+                try await builder?.beginCollection(at: startDate)
+            } catch {
+                print("Failed to start workout: \(error)")
+                state = .notStarted
+            }
+        }
     }
-    
-    private func resetSession() {
-        
-        session = nil
+
+    public func pause() {
+        session?.pause()
+    }
+
+    public func resume() {
+        session?.resume()
+    }
+
+    public func end() {
+        state = .stopped
+        session?.stopActivity(with: .now)
+    }
+
+    // MARK: - Session State Changes
+
+    // Saving follows Apple's order: stop, finish collecting, save, then end the session.
+    private func consumeSessionStateChange(_ change: SessionStateChange) async {
+        guard change.newState == .stopped, let builder else { return }
+
+        do {
+            try await builder.endCollection(at: change.date)
+            _ = try await builder.finishWorkout()
+            session?.end()
+        } catch {
+            print("Error finishing workout: \(error)")
+            return
+        }
+        state = .ended
+        resetWorkout()
+    }
+
+    private func resetWorkout() {
         builder = nil
+        session = nil
     }
 }
