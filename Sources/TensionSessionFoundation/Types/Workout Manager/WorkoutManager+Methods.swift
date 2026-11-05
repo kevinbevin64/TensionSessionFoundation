@@ -218,6 +218,7 @@ extension WorkoutManager {
         }
         
         unsortedHistory.append(workout)
+        
         try? save()
     }
     
