@@ -21,19 +21,6 @@ public extension Companion {
         )
     }
     
-    func requestHistoricalWorkoutsHashCheck() {
-        
-        guard let hash = workoutManager?.getHistoricalWorkoutsHash() else {
-            assertionFailure()
-            return
-        }
-
-        sendInstantly(
-            .historicalWorkoutsHashCheckRequest(hash: hash),
-            replyHandler: { self.process($0) }
-        )
-    }
-    
     func requestExerciseCatalogHashCheck() {
         
         guard let hash = getExerciseCatalogDTO?().getHash() else {

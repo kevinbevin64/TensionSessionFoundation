@@ -7,12 +7,9 @@
 
 import WatchConnectivity
 
+// MARK: Low level
+
 extension Companion {
-    
-    public func addHistoricalWorkout(_ workout: Workout) {
-        
-        send(.addHistoricalWorkout(workout: workout.getDTO()))
-    }
     
     func send(_ operation: SyncInstruction.Outbound) {
 
@@ -56,5 +53,27 @@ extension Companion {
             dictionary,
             replyHandler: replyHandler
         )
+    }
+}
+
+// MARK: Public API
+
+extension Companion {
+
+    public func addHistoricalWorkout(_ workout: Workout) {
+
+        send(.addHistoricalWorkout(workout: workout.getDTO()))
+    }
+
+    func requestHistoricalWorkoutsHashCheck() {
+
+        guard let workoutManager else {
+            assertionFailure()
+            return
+        }
+
+        let hash = workoutManager.getHistoricalWorkoutsHash()
+
+        send(.historicalWorkoutsHashCheckRequest(hash: hash))
     }
 }
