@@ -37,7 +37,7 @@ extension Companion {
             replyHandler(receiveHistoricalWorkoutsHashCheckRequest(hash))
 
         case .historicalWorkoutsHashCheckReply(let status):
-            replyHandler(receiveHistoricalWorkoutsHashCheckReply(status))
+            receiveHistoricalWorkoutsHashCheckReply(status)
 
         case .templateWorkoutsHashCheckRequest(let hash):
             replyHandler(receiveTemplateWorkoutsHashCheckRequest(hash))
