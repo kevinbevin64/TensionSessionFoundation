@@ -5,13 +5,11 @@
 //  Created by Kevin Chen on 9/1/26.
 //
 
-///
-/// Follows Apple's sample code
-/// - Building a workout app for iPhone and iPad (WWDC25)
-/// - Build a workout app for Apple Watch (WWDC21)
-///
-/// Only one workout session can run at a time.
-///
+// Follows Apple's sample code
+// - Building a workout app for iPhone and iPad (WWDC25)
+// - Build a workout app for Apple Watch (WWDC21)
+//
+// Only one workout session can run at a time.
 
 import HealthKit
 import Observation
@@ -24,11 +22,11 @@ public final class HKWorkoutManager: NSObject {
     
     // MARK: Variables
     
-    let healthStore = HKHealthStore()
+    private let healthStore = HKHealthStore()
     
-    var session: HKWorkoutSession?
+    private var session: HKWorkoutSession?
     
-    var builder: HKLiveWorkoutBuilder?
+    private var builder: HKLiveWorkoutBuilder?
     
     private static let workoutConfiguration: HKWorkoutConfiguration = {
         let configuration = HKWorkoutConfiguration()
@@ -36,35 +34,6 @@ public final class HKWorkoutManager: NSObject {
         configuration.locationType = .indoor
         return configuration
     }()
-    
-    // Sharing energy and heart rate lets the builder save them with the workout.
-    static var typesToShare: Set<HKSampleType> {
-        
-        [
-            HKQuantityType.workoutType(),
-            HKQuantityType(.activeEnergyBurned),
-            HKQuantityType(.heartRate)
-        ]
-    }
-    
-    static var typesToRead: Set<HKObjectType> {
-        
-        [
-            HKQuantityType.workoutType(),
-            HKQuantityType(.heartRate),
-            HKQuantityType(.activeEnergyBurned)
-        ]
-    }
-    
-    // MARK: Diagnostics
-    
-    public private(set) var logEntries: [LogEntry] = []
-    
-    var collectedCounts: [String: Int] = [:]
-    
-    var lastSavedWorkout: HKWorkout?
-    
-    var lastSaveError: String?
     
     public override init() {
         
@@ -75,21 +44,30 @@ public final class HKWorkoutManager: NSObject {
     
     public func requestAuthorization() {
         
-        log("Asking for Health permission")
+        // Sharing energy and heart rate lets the builder save them with the workout.
+        let typesToShare: Set = [
+            HKQuantityType.workoutType(),
+            HKQuantityType(.activeEnergyBurned),
+            HKQuantityType(.heartRate)
+        ]
+        
+        let typesToRead: Set = [
+            HKQuantityType(.heartRate),
+            HKQuantityType(.activeEnergyBurned)
+        ]
         
         Task {
             
             do {
                 
                 try await healthStore.requestAuthorization(
-                    toShare: HKWorkoutManager.typesToShare,
-                    read: HKWorkoutManager.typesToRead
+                    toShare: typesToShare,
+                    read: typesToRead
                 )
-                log("Health permission request finished")
             
             } catch {
                 
-                log("Health permission request failed: \(error.localizedDescription)")
+                print("Failed to request authorization: \(error.localizedDescription)")
                 
             }
         }
@@ -100,15 +78,9 @@ public final class HKWorkoutManager: NSObject {
     public func start() {
         
         guard session == nil else {
-            log("Start ignored: a workout session is already in progress")
+            print("A workout session is already in progress.")
             return
         }
-        
-        log("Start")
-        
-        collectedCounts = [:]
-        lastSavedWorkout = nil
-        lastSaveError = nil
         
         let configuration = HKWorkoutManager.workoutConfiguration
         
@@ -127,15 +99,12 @@ public final class HKWorkoutManager: NSObject {
                 workoutConfiguration: configuration
             )
             
-            let collecting = newBuilder.dataSource?.typesToCollect.map { HKWorkoutManager.displayName(of: $0.identifier) } ?? []
-            log("Collecting: \(collecting.sorted().joined(separator: ", "))")
-            
             session = newSession
             builder = newBuilder
         
         } catch {
             
-            log("Failed to create workout session: \(error.localizedDescription)")
+            print("Failed to create workout session: \(error.localizedDescription)")
             return
             
         }
@@ -151,11 +120,10 @@ public final class HKWorkoutManager: NSObject {
             do {
                 
                 try await builder?.beginCollection(at: startDate)
-                log("Began collecting")
             
             } catch {
                 
-                log("Failed to begin collecting: \(error.localizedDescription)")
+                print("Failed to start workout: \(error.localizedDescription)")
                 state = .notStarted
                 session?.end()
                 
@@ -165,24 +133,18 @@ public final class HKWorkoutManager: NSObject {
     
     public func pause() {
         
-        log("Pause")
         session?.pause()
     }
     
     public func resume() {
         
-        log("Resume")
         session?.resume()
     }
     
     public func end() {
         
-        guard session != nil else {
-            log("End ignored: no workout session")
-            return
-        }
+        guard session != nil else { return }
         
-        log("End")
         state = .stopped
         session?.stopActivity(with: .now)
     }
@@ -191,17 +153,11 @@ public final class HKWorkoutManager: NSObject {
     
     func sessionDidChange(
         _ sessionID: ObjectIdentifier,
-        from oldState: HKWorkoutSessionState,
         to state: HKWorkoutSessionState,
         at date: Date
     ) {
         
-        guard isCurrentSession(sessionID) else {
-            log("Ignored a state change from an old session")
-            return
-        }
-        
-        log("Session: \(HKWorkoutManager.describe(oldState)) → \(HKWorkoutManager.describe(state))")
+        guard isCurrentSession(sessionID) else { return }
         
         switch state {
         
@@ -224,22 +180,13 @@ public final class HKWorkoutManager: NSObject {
         }
     }
     
-    func sessionDidFail(_ sessionID: ObjectIdentifier, description: String) {
-        
-        log("Session failed: \(description)")
+    func sessionDidFail(_ sessionID: ObjectIdentifier) {
         
         guard isCurrentSession(sessionID) else { return }
         
         state = .ended
         session?.end()
         resetSession()
-    }
-    
-    func builderDidCollect(_ typeNames: [String]) {
-        
-        for name in typeNames {
-            collectedCounts[name, default: 0] += 1
-        }
     }
     
     // Ignores events from sessions that have already ended.
@@ -261,26 +208,15 @@ public final class HKWorkoutManager: NSObject {
             do {
                 
                 try await builder.endCollection(at: endDate)
-                log("Ended collecting")
-                
-                let workout = try await builder.finishWorkout()
-                lastSavedWorkout = workout
-                
-                if let workout {
-                    log("Saved workout with active energy: \(HKWorkoutManager.describeEnergy(of: workout))")
-                } else {
-                    log("Saving finished but returned no workout")
-                }
+                _ = try await builder.finishWorkout()
             
             } catch {
                 
-                lastSaveError = error.localizedDescription
-                log("Failed to save workout: \(error.localizedDescription)")
+                print("Failed to save workout: \(error.localizedDescription)")
                 
             }
             
             // End the session even if saving failed, so a new one can start.
-            log("Ending session")
             session.end()
         }
     }

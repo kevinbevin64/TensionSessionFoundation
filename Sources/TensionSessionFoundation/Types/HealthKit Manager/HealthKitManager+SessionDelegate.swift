@@ -21,7 +21,7 @@ extension HKWorkoutManager: HKWorkoutSessionDelegate {
         
         // The main queue runs these in order, so state changes are handled in the order they happen.
         DispatchQueue.main.async { [weak self] in
-            self?.sessionDidChange(sessionID, from: fromState, to: toState, at: date)
+            self?.sessionDidChange(sessionID, to: toState, at: date)
         }
     }
     
@@ -31,12 +31,12 @@ extension HKWorkoutManager: HKWorkoutSessionDelegate {
         didFailWithError error: any Swift.Error
     ) {
         
+        print("Workout session failed: \(error.localizedDescription)")
+        
         let sessionID = ObjectIdentifier(workoutSession)
         
-        let description = error.localizedDescription
-        
         DispatchQueue.main.async { [weak self] in
-            self?.sessionDidFail(sessionID, description: description)
+            self?.sessionDidFail(sessionID)
         }
     }
 }
