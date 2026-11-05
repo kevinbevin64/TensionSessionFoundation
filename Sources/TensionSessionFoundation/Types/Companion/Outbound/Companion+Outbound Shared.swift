@@ -58,9 +58,9 @@ extension Companion {
 
 // MARK: Public API
 
-extension Companion {
+public extension Companion {
 
-    public func addHistoricalWorkout(_ workout: Workout) {
+    func addHistoricalWorkout(_ workout: Workout) {
 
         send(.addHistoricalWorkout(workout: workout.getDTO()))
     }
