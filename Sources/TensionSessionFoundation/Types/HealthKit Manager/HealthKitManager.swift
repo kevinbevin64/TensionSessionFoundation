@@ -81,7 +81,7 @@ public final class HKWorkoutManager: NSObject {
             return
         }
         
-        let configuration = Self.workoutConfiguration // FIXME: instead of Self make it HKWorkoutManager
+        let configuration = HKWorkoutManager.workoutConfiguration
         
         do {
             
