@@ -46,8 +46,11 @@ public final class HKWorkoutManager: NSObject {
     
     public func requestAuthorization() {
         
+        // Sharing energy and heart rate lets the builder save them with the workout.
         let typesToShare: Set = [
-            HKQuantityType.workoutType()
+            HKQuantityType.workoutType(),
+            HKQuantityType(.activeEnergyBurned),
+            HKQuantityType(.heartRate)
         ]
         
         let typesToRead: Set = [
@@ -97,6 +100,8 @@ public final class HKWorkoutManager: NSObject {
                 healthStore: healthStore,
                 workoutConfiguration: configuration
             )
+            
+            print("Collecting: \(newBuilder.dataSource?.typesToCollect.map(\.identifier) ?? [])")
             
             session = newSession
             builder = newBuilder
@@ -207,7 +212,10 @@ public final class HKWorkoutManager: NSObject {
             do {
                 
                 try await builder.endCollection(at: endDate)
-                _ = try await builder.finishWorkout()
+                let workout = try await builder.finishWorkout()
+                
+                let energy = workout?.statistics(for: HKQuantityType(.activeEnergyBurned))?.sumQuantity()
+                print("Saved workout with active energy: \(energy?.description ?? "none")")
             
             } catch {
                 
