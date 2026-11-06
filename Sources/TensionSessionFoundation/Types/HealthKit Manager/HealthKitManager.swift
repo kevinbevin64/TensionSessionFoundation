@@ -5,12 +5,6 @@
 //  Created by Kevin Chen on 9/1/26.
 //
 
-// Follows Apple's sample code
-// - Building a workout app for iPhone and iPad (WWDC25)
-// - Build a workout app for Apple Watch (WWDC21)
-//
-// Only one workout session can run at a time.
-
 import HealthKit
 import Observation
 
@@ -44,8 +38,6 @@ public final class HKWorkoutManager: NSObject {
     
     public func requestAuthorization() {
         
-        // Sharing energy and heart rate lets the builder save them with the workout.
-        // Resting energy is needed for the total calories to include more than the active calories.
         let typesToShare: Set = [
             HKQuantityType.workoutType(),
             HKQuantityType(.activeEnergyBurned),
@@ -192,7 +184,6 @@ public final class HKWorkoutManager: NSObject {
         resetSession()
     }
     
-    // Ignores events from sessions that have already ended.
     private func isCurrentSession(_ sessionID: ObjectIdentifier) -> Bool {
         
         guard let session else { return false }
@@ -201,7 +192,6 @@ public final class HKWorkoutManager: NSObject {
     
     // MARK: Saving
     
-    // Saving follows Apple's order: stop, finish collecting, save, then end the session.
     private func finishWorkout(at endDate: Date) {
         
         guard let session, let builder else { return }
@@ -219,7 +209,6 @@ public final class HKWorkoutManager: NSObject {
                 
             }
             
-            // End the session even if saving failed, so a new one can start.
             session.end()
         }
     }

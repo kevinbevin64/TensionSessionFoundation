@@ -19,7 +19,6 @@ extension HKWorkoutManager: HKWorkoutSessionDelegate {
         
         let sessionID = ObjectIdentifier(workoutSession)
         
-        // The main queue runs these in order, so state changes are handled in the order they happen.
         DispatchQueue.main.async { [weak self] in
             self?.sessionDidChange(sessionID, to: toState, at: date)
         }
