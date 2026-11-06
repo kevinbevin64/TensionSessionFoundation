@@ -45,15 +45,18 @@ public final class HKWorkoutManager: NSObject {
     public func requestAuthorization() {
         
         // Sharing energy and heart rate lets the builder save them with the workout.
+        // Resting energy is needed for the total calories to include more than the active calories.
         let typesToShare: Set = [
             HKQuantityType.workoutType(),
             HKQuantityType(.activeEnergyBurned),
+            HKQuantityType(.basalEnergyBurned),
             HKQuantityType(.heartRate)
         ]
         
         let typesToRead: Set = [
             HKQuantityType(.heartRate),
-            HKQuantityType(.activeEnergyBurned)
+            HKQuantityType(.activeEnergyBurned),
+            HKQuantityType(.basalEnergyBurned)
         ]
         
         Task {
