@@ -36,7 +36,7 @@ public final class HKWorkoutManager: NSObject {
     
     // MARK: Authorization
     
-    public func requestAuthorization() {
+    public func requestAuthorization() async {
         
         let typesToShare: Set = [
             HKQuantityType.workoutType(),
@@ -51,20 +51,17 @@ public final class HKWorkoutManager: NSObject {
             HKQuantityType(.heartRate)
         ]
         
-        Task {
+        do {
             
-            do {
-                
-                try await healthStore.requestAuthorization(
-                    toShare: typesToShare,
-                    read: typesToRead
-                )
+            try await healthStore.requestAuthorization(
+                toShare: typesToShare,
+                read: typesToRead
+            )
+        
+        } catch {
             
-            } catch {
-                
-                print("Failed to request authorization: \(error.localizedDescription)")
-                
-            }
+            print("Failed to request authorization: \(error.localizedDescription)")
+            
         }
     }
     
