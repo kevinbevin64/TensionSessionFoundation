@@ -46,9 +46,9 @@ public final class HKWorkoutManager: NSObject {
         ]
         
         let typesToRead: Set = [
-            HKQuantityType(.heartRate),
             HKQuantityType(.activeEnergyBurned),
-            HKQuantityType(.basalEnergyBurned)
+            HKQuantityType(.basalEnergyBurned),
+            HKQuantityType(.heartRate)
         ]
         
         Task {
