@@ -16,5 +16,7 @@ extension HKWorkoutManager: HKLiveWorkoutBuilderDelegate {
     public func workoutBuilder(
         _ workoutBuilder: HKLiveWorkoutBuilder,
         didCollectDataOf collectedTypes: Set<HKSampleType>
-    ) {}
+    ) {
+        
+    }
 }
