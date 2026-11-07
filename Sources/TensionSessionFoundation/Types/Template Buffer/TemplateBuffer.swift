@@ -14,7 +14,7 @@ final public class TemplateBuffer {
     
     public private(set) var lastSetCompletion: LastSetCompletion?
     
-    private var healthKitManager: HKWorkoutManager
+    public let healthKitManager: HKWorkoutManager
     
     var onInsertion: (UUID) -> Void
     
