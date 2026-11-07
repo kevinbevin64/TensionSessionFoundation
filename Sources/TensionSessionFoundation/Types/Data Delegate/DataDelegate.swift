@@ -21,7 +21,9 @@ final public class DataDelegate {
     public var catalog: Exercise.Catalog
     
     public var companion: Companion
-    
+
+    public var exerciseHistorian: ExerciseHistorian
+
     #if os(iOS)
     public var workoutGenerator: WorkoutGenerator
     #endif
@@ -111,7 +113,11 @@ final public class DataDelegate {
         
         workoutGenerator = WorkoutGenerator(catalog: catalog)
         #endif
-        
+
+        // Exercise Historian
+
+        exerciseHistorian = ExerciseHistorian(workoutManager: workoutManager)
+
         // Companion
         
         companion = Companion()

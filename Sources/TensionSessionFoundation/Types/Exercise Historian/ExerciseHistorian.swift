@@ -8,27 +8,35 @@
 import DequeModule
 import Foundation
 
-class ExerciseHistorian {
+public class ExerciseHistorian {
+
+    private static let maxConcurrentSearches = 3
+
+    private static let workoutsPerYield = 50
 
     private weak var workoutManager: WorkoutManager?
 
     private var sortedExerciseHistories: [SearchRule: [HistoricalExercise]]
 
-    private var pendingSearches: Deque<SearchRule>
+    private var inFlightSearches: [SearchRule: Task<[HistoricalExercise], Never>]
+
+    private var runningSearchCount: Int
+
+    private var waitingSearches: Deque<CheckedContinuation<Void, Never>>
 
     init(workoutManager: WorkoutManager) {
-        self.sortedExerciseHistories = [:]
+
         self.workoutManager = workoutManager
-        self.pendingSearches = Deque()
+        self.sortedExerciseHistories = [:]
+        self.inFlightSearches = [:]
+        self.runningSearchCount = 0
+        self.waitingSearches = Deque()
     }
 
     func getSortedExerciseHistory(
         forKind kind: Exercise.Catalog.Kind,
         equipmentMatchingRule: EquipmentMatchingRule
-    ) -> [HistoricalExercise] {
-
-        guard let workoutManager else { preconditionFailure() }
-
+    ) async -> [HistoricalExercise] {
         let searchRule = SearchRule(
             kind: kind,
             equipmentMatchingRule: equipmentMatchingRule
@@ -38,23 +46,78 @@ class ExerciseHistorian {
             return sortedExerciseHistory
         }
 
-        let sortedExerciseHistory: [HistoricalExercise]
-            = workoutManager.sortedHistory.compactMap { historicalWorkout in
+        if let inFlightSearch = inFlightSearches[searchRule] {
+            return await inFlightSearch.value
+        }
+
+        let search = Task {
+            await acquireSearchSlot()
+            defer { releaseSearchSlot() }
+            return await searchHistory(for: searchRule)
+        }
+
+        inFlightSearches[searchRule] = search
+
+        let sortedExerciseHistory = await search.value
+
+        sortedExerciseHistories[searchRule] = sortedExerciseHistory
+        inFlightSearches[searchRule] = nil
+
+        return sortedExerciseHistory
+    }
+
+    private func searchHistory(for searchRule: SearchRule) async -> [HistoricalExercise] {
+
+        guard let workoutManager else { preconditionFailure() }
+
+        var sortedExerciseHistory: [HistoricalExercise] = []
+
+        for (index, historicalWorkout) in workoutManager.sortedHistory.enumerated() {
+
+            if index > 0, index.isMultiple(of: Self.workoutsPerYield) {
+                await Task.yield()
+            }
 
             guard let startInstant = historicalWorkout.startInstant else {
                 assertionFailure()
-                return nil
+                continue
             }
 
             guard let exercise = historicalWorkout.exerciseMatching(searchRule: searchRule) else {
-                return nil
+                continue
             }
 
-            return HistoricalExercise(startInstant: startInstant, exercise: exercise)
+            sortedExerciseHistory.append(
+                HistoricalExercise(
+                    startInstant: startInstant,
+                    exercise: exercise
+                )
+            )
         }
 
-        sortedExerciseHistories[searchRule] = sortedExerciseHistory
-
         return sortedExerciseHistory
+    }
+
+    private func acquireSearchSlot() async {
+
+        if runningSearchCount < Self.maxConcurrentSearches {
+            runningSearchCount += 1
+            return
+        }
+
+        await withCheckedContinuation { continuation in
+            waitingSearches.append(continuation)
+        }
+    }
+
+    private func releaseSearchSlot() {
+
+        assert(runningSearchCount > 0)
+
+        if let nextSearch = waitingSearches.popFirst() {
+            nextSearch.resume()
+        } else {
+            runningSearchCount -= 1
+        }
     }
 }
