@@ -71,4 +71,22 @@ public extension Workout {
             exercise.order = i
         }
     }
+
+    internal func exerciseMatching(searchRule: ExerciseHistorian.SearchRule) -> Exercise? {
+
+        return unsortedExercises.first(where: { exercise in
+
+            guard (exercise.kind == searchRule.kind
+                   && exercise.setDetails.isEmpty == false
+            ) else {
+                return false
+            }
+
+            if case .required(let equipment) = searchRule.equipmentMatchingRule {
+                return exercise.equipment == equipment
+            } else {
+                return true
+            }
+        })
+    }
 }
