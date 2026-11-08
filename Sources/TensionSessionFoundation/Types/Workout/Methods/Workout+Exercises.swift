@@ -76,7 +76,11 @@ public extension Workout {
 
         return unsortedExercises.first(where: { exercise in
 
-            if exercise.kind != searchRule.kind { return false }
+            guard (exercise.kind == searchRule.kind
+                   && exercise.setDetails.isEmpty == false
+            ) else {
+                return false
+            }
 
             if case .required(let equipment) = searchRule.equipmentMatchingRule {
                 return exercise.equipment == equipment

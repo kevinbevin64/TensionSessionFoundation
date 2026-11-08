@@ -8,6 +8,7 @@
 import DequeModule
 import Foundation
 
+@Observable
 public class ExerciseHistorian {
 
     private static let maxConcurrentSearches = 3
@@ -33,7 +34,7 @@ public class ExerciseHistorian {
         self.waitingSearches = Deque()
     }
 
-    func getSortedExerciseHistory(
+    public func getSortedExerciseHistory(
         forKind kind: Exercise.Catalog.Kind,
         equipmentMatchingRule: EquipmentMatchingRule
     ) async -> [HistoricalExercise] {

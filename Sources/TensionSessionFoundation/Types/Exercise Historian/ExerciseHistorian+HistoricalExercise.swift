@@ -7,12 +7,12 @@
 
 import Foundation
 
-extension ExerciseHistorian {
+public extension ExerciseHistorian {
 
     struct HistoricalExercise {
 
-        let startInstant: Date
+        public let startInstant: Date
 
-        let exercise: Exercise
+        public let exercise: Exercise
     }
 }

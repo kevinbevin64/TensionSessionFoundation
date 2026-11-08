@@ -5,7 +5,7 @@
 //  Created by Kevin on 11/1/26.
 //
 
-extension ExerciseHistorian {
+public extension ExerciseHistorian {
 
     struct SearchRule: Hashable {
 
