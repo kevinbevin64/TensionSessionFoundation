@@ -38,6 +38,7 @@ public class ExerciseHistorian {
         forKind kind: Exercise.Catalog.Kind,
         equipmentMatchingRule: EquipmentMatchingRule
     ) async -> [HistoricalExercise] {
+
         let searchRule = SearchRule(
             kind: kind,
             equipmentMatchingRule: equipmentMatchingRule
