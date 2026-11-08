@@ -67,6 +67,14 @@ public class ExerciseHistorian {
         return sortedExerciseHistory
     }
 
+    public func adjust(accordingTo newlyCompletedWorkout: Workout) {
+
+        // FIXME: Make this fine-grained
+        // Invalidating the dictionary is okay for now and achieves the same end result
+
+        sortedExerciseHistories = [:]
+    }
+
     private func searchHistory(for searchRule: SearchRule) async -> [HistoricalExercise] {
 
         guard let workoutManager else { preconditionFailure() }
