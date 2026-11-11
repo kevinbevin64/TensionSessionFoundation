@@ -12,8 +12,9 @@ import Observation
 ///
 /// `state` follows the selection in `TemplateBuffer`: it changes only through
 /// `start()`, `pause()`, `resume()` and `end()`, and the HealthKit session is
-/// kept in line with it. If the user hasn't allowed saving workouts, no
-/// session runs and `state` stays `.notStarted`.
+/// kept in line with it. If the user hasn't allowed saving workouts, or
+/// HealthKit fails, no session runs and `state` stays `.notStarted` until the
+/// next `start()`. The workout itself carries on in the app either way.
 @Observable
 @MainActor
 public final class HKWorkoutManager: NSObject {
@@ -175,6 +176,7 @@ public final class HKWorkoutManager: NSObject {
         } catch {
             
             print("Failed to create workout session: \(error.localizedDescription)")
+            stopFollowingSelection()
             return
             
         }
@@ -205,8 +207,11 @@ public final class HKWorkoutManager: NSObject {
                 print("Failed to start workout: \(error.localizedDescription)")
                 
                 guard isCurrentSession(ObjectIdentifier(newSession)) else { return }
-                isStoppingSession = true
+                
+                // Nothing was collected, so there is nothing to save.
                 newSession.end()
+                resetSession()
+                stopFollowingSelection()
                 
             }
         }
@@ -284,9 +289,32 @@ public final class HKWorkoutManager: NSObject {
         
         guard isCurrentSession(sessionID), let session else { return }
         
-        session.end()
-        resetSession()
-        startPendingSessionIfNeeded()
+        if isStoppingSession {
+            // The previous workout failed while it was being stopped or saved.
+            // The current workout, if any, is waiting in `pendingStartDate`.
+            session.end()
+            resetSession()
+            startPendingSessionIfNeeded()
+            return
+        }
+        
+        // The workout's session failed. Save what was recorded so far,
+        // and stop following the selection until the next `start()`.
+        isStoppingSession = true
+        stopFollowingSelection()
+        finishWorkout(at: .now)
+    }
+    
+    /// Used when HealthKit can't run the current workout. The workout itself
+    /// carries on in the app, but the manager stays `.notStarted` until the
+    /// next `start()`.
+    private func stopFollowingSelection() {
+        
+        pendingStartDate = nil
+        
+        if state == .running || state == .paused {
+            state = .notStarted
+        }
     }
     
     private func isCurrentSession(_ sessionID: ObjectIdentifier) -> Bool {
@@ -315,6 +343,12 @@ public final class HKWorkoutManager: NSObject {
             }
             
             session.end()
+            
+            // Don't wait for the `.ended` callback, which a failed session
+            // may never send. If it does arrive, it's ignored.
+            guard isCurrentSession(ObjectIdentifier(session)) else { return }
+            resetSession()
+            startPendingSessionIfNeeded()
         }
     }
     
