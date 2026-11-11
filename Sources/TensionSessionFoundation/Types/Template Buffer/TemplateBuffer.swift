@@ -55,6 +55,7 @@ public extension TemplateBuffer {
         }
         
         selection = template
+        healthKitManager.selectionDidReset()
         onInsertion(template.id2)
     }
     
@@ -69,6 +70,7 @@ public extension TemplateBuffer {
         
         lastSetCompletion = nil
         selection = nil
+        healthKitManager.selectionDidReset()
         onEmptying()
     }
     
