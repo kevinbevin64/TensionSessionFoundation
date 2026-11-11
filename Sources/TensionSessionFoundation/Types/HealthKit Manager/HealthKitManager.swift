@@ -33,7 +33,7 @@ public final class HKWorkoutManager: NSObject {
         return configuration
     }()
     
-    public override init() {
+    override init() {
         
         super.init()
     }
