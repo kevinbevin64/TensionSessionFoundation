@@ -71,7 +71,7 @@ public final class HKWorkoutManager: NSObject {
     
     // MARK: Controls
     
-    public func start() {
+    func start() {
         
         guard state != .running, state != .paused else {
             print("A workout is already in progress.")
@@ -94,7 +94,7 @@ public final class HKWorkoutManager: NSObject {
         }
     }
     
-    public func pause() {
+    func pause() {
         
         guard state == .running else { return }
         
@@ -104,7 +104,7 @@ public final class HKWorkoutManager: NSObject {
         session.pause()
     }
     
-    public func resume() {
+    func resume() {
         
         guard state == .paused else { return }
         
@@ -114,7 +114,7 @@ public final class HKWorkoutManager: NSObject {
         session.resume()
     }
     
-    public func end() {
+    func end() {
         
         guard state == .running || state == .paused else { return }
         
