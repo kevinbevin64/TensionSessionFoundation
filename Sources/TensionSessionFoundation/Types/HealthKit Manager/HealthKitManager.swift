@@ -8,13 +8,6 @@
 import HealthKit
 import Observation
 
-/// Runs the HealthKit workout session for the selected workout.
-///
-/// `state` follows the selection in `TemplateBuffer`: it changes only through
-/// `start()`, `pause()`, `resume()` and `end()`, and the HealthKit session is
-/// kept in line with it. If the user hasn't allowed saving workouts, or
-/// HealthKit fails, no session runs and `state` stays `.notStarted` until the
-/// next `start()`. The workout itself carries on in the app either way.
 @Observable
 @MainActor
 public final class HKWorkoutManager: NSObject {
@@ -29,10 +22,8 @@ public final class HKWorkoutManager: NSObject {
     
     private var builder: HKLiveWorkoutBuilder?
     
-    /// Whether the current session has been told to stop or end.
     private var isStoppingSession = false
     
-    /// Start date of a workout waiting for the previous session to finish saving.
     private var pendingStartDate: Date?
     
     private static let workoutConfiguration: HKWorkoutConfiguration = {
@@ -80,10 +71,6 @@ public final class HKWorkoutManager: NSObject {
     
     // MARK: Controls
     
-    /// Starts a workout. Ignored while a workout is running or paused.
-    ///
-    /// If the user hasn't allowed saving workouts, no session runs and
-    /// `state` stays `.notStarted`.
     public func start() {
         
         guard state != .running, state != .paused else {
@@ -103,13 +90,10 @@ public final class HKWorkoutManager: NSObject {
         if session == nil {
             beginSession(at: startDate)
         } else {
-            // The previous workout is still being saved. The new session
-            // starts once that one has ended.
             pendingStartDate = startDate
         }
     }
     
-    /// Pauses the workout. Does nothing unless it is running.
     public func pause() {
         
         guard state == .running else { return }
@@ -120,7 +104,6 @@ public final class HKWorkoutManager: NSObject {
         session.pause()
     }
     
-    /// Resumes the workout. Does nothing unless it is paused.
     public func resume() {
         
         guard state == .paused else { return }
@@ -131,7 +114,6 @@ public final class HKWorkoutManager: NSObject {
         session.resume()
     }
     
-    /// Ends the workout. Does nothing unless it is running or paused.
     public func end() {
         
         guard state == .running || state == .paused else { return }
@@ -139,14 +121,10 @@ public final class HKWorkoutManager: NSObject {
         state = .ended
         pendingStartDate = nil
         
-        // A session that hasn't reached `.running` yet is stopped as soon
-        // as it does, in `syncSession`.
         guard let session, session.state == .running || session.state == .paused else { return }
         stopSession()
     }
     
-    /// Called by `TemplateBuffer` when its selection is replaced or cleared,
-    /// so an ended workout goes back to `.notStarted` like the new selection.
     func selectionDidReset() {
         
         if state == .ended {
@@ -158,8 +136,6 @@ public final class HKWorkoutManager: NSObject {
         
         healthStore.authorizationStatus(for: HKObjectType.workoutType()) == .sharingAuthorized
     }
-    
-    // MARK: Session
     
     private func beginSession(at startDate: Date) {
         
@@ -208,7 +184,6 @@ public final class HKWorkoutManager: NSObject {
                 
                 guard isCurrentSession(ObjectIdentifier(newSession)) else { return }
                 
-                // Nothing was collected, so there is nothing to save.
                 newSession.end()
                 resetSession()
                 stopFollowingSelection()
@@ -225,7 +200,6 @@ public final class HKWorkoutManager: NSObject {
         session.stopActivity(with: .now)
     }
     
-    /// Brings a running or paused session in line with `state`.
     private func syncSession(_ session: HKWorkoutSession, currentlyIn sessionState: HKWorkoutSessionState) {
         
         guard !isStoppingSession else { return }
@@ -242,7 +216,6 @@ public final class HKWorkoutManager: NSObject {
             break
         
         default:
-            // The workout ended before the session caught up.
             stopSession()
             
         }
@@ -290,24 +263,17 @@ public final class HKWorkoutManager: NSObject {
         guard isCurrentSession(sessionID), let session else { return }
         
         if isStoppingSession {
-            // The previous workout failed while it was being stopped or saved.
-            // The current workout, if any, is waiting in `pendingStartDate`.
             session.end()
             resetSession()
             startPendingSessionIfNeeded()
             return
         }
         
-        // The workout's session failed. Save what was recorded so far,
-        // and stop following the selection until the next `start()`.
         isStoppingSession = true
         stopFollowingSelection()
         finishWorkout(at: .now)
     }
     
-    /// Used when HealthKit can't run the current workout. The workout itself
-    /// carries on in the app, but the manager stays `.notStarted` until the
-    /// next `start()`.
     private func stopFollowingSelection() {
         
         pendingStartDate = nil
@@ -344,8 +310,6 @@ public final class HKWorkoutManager: NSObject {
             
             session.end()
             
-            // Don't wait for the `.ended` callback, which a failed session
-            // may never send. If it does arrive, it's ignored.
             guard isCurrentSession(ObjectIdentifier(session)) else { return }
             resetSession()
             startPendingSessionIfNeeded()
