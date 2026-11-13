@@ -54,9 +54,12 @@ public extension WorkoutManager {
         setTemplateOrder()
     }
     
-    func rememberHistoricalWorkout() {
-        
-        guard let workout = templateBuffer.selection else { return }
+    func rememberHistoricalWorkout() -> Workout? {
+
+        guard let workout = templateBuffer.selection else {
+            assertionFailure()
+            return nil
+        }
         assert(templateBuffer.isReadyToEvictFinishedWorkout)
         
         workout.id2 = UUID()
@@ -70,6 +73,8 @@ public extension WorkoutManager {
         }
         
         try? save()
+
+        return workout
     }
     
     func freshTemplate() -> Workout? {
