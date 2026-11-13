@@ -5,32 +5,26 @@
 //  Created by Kevin Chen on 9/1/26.
 //
 
-//
-//  HealthKitManager.swift
-//  TensionSession
-//
-//  Created by Kevin Chen on 9/1/26.
-//
-
-import Foundation
 import HealthKit
 import Observation
 
 @Observable
 @MainActor
-class HKWorkoutManager: NSObject {
+public final class HKWorkoutManager: NSObject {
     
-    static let shared = HKWorkoutManager()
+    public private(set) var state: HKWorkoutSessionState = .notStarted
+    
+    // MARK: Variables
     
     private let healthStore = HKHealthStore()
+    
     private var session: HKWorkoutSession?
+    
     private var builder: HKLiveWorkoutBuilder?
     
-    private static let shareTypes: Set = [
-        HKQuantityType.workoutType(),
-        HKQuantityType(.activeEnergyBurned),
-        HKQuantityType(.heartRate)
-    ]
+    private var isStoppingSession = false
+    
+    private var pendingStartDate: Date?
     
     private static let workoutConfiguration: HKWorkoutConfiguration = {
         let configuration = HKWorkoutConfiguration()
@@ -40,106 +34,292 @@ class HKWorkoutManager: NSObject {
     }()
     
     override init() {
+        
         super.init()
     }
     
+    // MARK: Authorization
+    
+    public func requestAuthorization() async {
+        
+        let typesToShare: Set = [
+            HKQuantityType.workoutType(),
+            HKQuantityType(.activeEnergyBurned),
+            HKQuantityType(.basalEnergyBurned),
+            HKQuantityType(.heartRate)
+        ]
+        
+        let typesToRead: Set = [
+            HKQuantityType(.activeEnergyBurned),
+            HKQuantityType(.basalEnergyBurned),
+            HKQuantityType(.heartRate)
+        ]
+        
+        do {
+            
+            try await healthStore.requestAuthorization(
+                toShare: typesToShare,
+                read: typesToRead
+            )
+        
+        } catch {
+            
+            print("Failed to request authorization: \(error.localizedDescription)")
+            
+        }
+    }
+    
+    // MARK: Controls
+    
     func start() {
-        guard HKHealthStore.isHealthDataAvailable() else { return }
         
-        // Ensure no active session exists before initializing
-        guard session == nil && builder == nil else { return }
+        guard state != .running, state != .paused else {
+            print("A workout is already in progress.")
+            return
+        }
         
-        Task {
-            do {
-                // 1. Request Authorization
-                try await healthStore.requestAuthorization(toShare: Self.shareTypes, read: [])
-                
-                // 2. Initialize Session and Builder
-                let newSession = try HKWorkoutSession(healthStore: healthStore, configuration: Self.workoutConfiguration)
-                let newBuilder = newSession.associatedWorkoutBuilder()
-                
-                newSession.delegate = self
-                newBuilder.delegate = self
-                newBuilder.dataSource = HKLiveWorkoutDataSource(healthStore: healthStore, workoutConfiguration: Self.workoutConfiguration)
-                
-                self.session = newSession
-                self.builder = newBuilder
-                
-                // 3. Start Data Collection
-                let startDate = Date.now
-                newSession.startActivity(with: startDate)
-                try await newBuilder.beginCollection(at: startDate)
-                
-            } catch {
-                print("Failed to start workout session: \(error.localizedDescription)")
-                resetSession()
-            }
+        guard canSaveWorkouts else {
+            print("Not allowed to save workouts, so the workout session won't run.")
+            state = .notStarted
+            return
+        }
+        
+        state = .running
+        let startDate = Date.now
+        
+        if session == nil {
+            beginSession(at: startDate)
+        } else {
+            pendingStartDate = startDate
         }
     }
     
     func pause() {
-        session?.pause()
+        
+        guard state == .running else { return }
+        
+        state = .paused
+        
+        guard let session, !isStoppingSession, session.state == .running else { return }
+        session.pause()
     }
     
     func resume() {
-        session?.resume()
+        
+        guard state == .paused else { return }
+        
+        state = .running
+        
+        guard let session, !isStoppingSession, session.state == .paused else { return }
+        session.resume()
     }
     
     func end() {
-        guard let session = session, let builder = builder else { return }
+        
+        guard state == .running || state == .paused else { return }
+        
+        state = .ended
+        pendingStartDate = nil
+        
+        guard let session, session.state == .running || session.state == .paused else { return }
+        stopSession()
+    }
+    
+    func selectionDidReset() {
+        
+        if state == .ended {
+            state = .notStarted
+        }
+    }
+    
+    private var canSaveWorkouts: Bool {
+        
+        healthStore.authorizationStatus(for: HKObjectType.workoutType()) == .sharingAuthorized
+    }
+    
+    private func beginSession(at startDate: Date) {
+        
+        let configuration = HKWorkoutManager.workoutConfiguration
+        let newSession: HKWorkoutSession
+        
+        do {
+            
+            newSession = try HKWorkoutSession(
+                healthStore: healthStore,
+                configuration: configuration
+            )
+        
+        } catch {
+            
+            print("Failed to create workout session: \(error.localizedDescription)")
+            stopFollowingSelection()
+            return
+            
+        }
+        
+        let newBuilder = newSession.associatedWorkoutBuilder()
+        newSession.delegate = self
+        newBuilder.delegate = self
+        newBuilder.dataSource = HKLiveWorkoutDataSource(
+            healthStore: healthStore,
+            workoutConfiguration: configuration
+        )
+        
+        session = newSession
+        builder = newBuilder
+        isStoppingSession = false
+        
+        newSession.prepare()
+        newSession.startActivity(with: startDate)
         
         Task {
-            let endDate = Date.now
-            session.end()
             
             do {
+                
+                try await newBuilder.beginCollection(at: startDate)
+            
+            } catch {
+                
+                print("Failed to start workout: \(error.localizedDescription)")
+                
+                guard isCurrentSession(ObjectIdentifier(newSession)) else { return }
+                
+                newSession.end()
+                resetSession()
+                stopFollowingSelection()
+                
+            }
+        }
+    }
+    
+    private func stopSession() {
+        
+        guard let session, !isStoppingSession else { return }
+        
+        isStoppingSession = true
+        session.stopActivity(with: .now)
+    }
+    
+    private func syncSession(_ session: HKWorkoutSession, currentlyIn sessionState: HKWorkoutSessionState) {
+        
+        guard !isStoppingSession else { return }
+        
+        switch state {
+        
+        case .running where sessionState == .paused:
+            session.resume()
+        
+        case .paused where sessionState == .running:
+            session.pause()
+        
+        case .running, .paused:
+            break
+        
+        default:
+            stopSession()
+            
+        }
+    }
+    
+    private func startPendingSessionIfNeeded() {
+        
+        guard let startDate = pendingStartDate else { return }
+        pendingStartDate = nil
+        
+        guard state == .running || state == .paused else { return }
+        beginSession(at: startDate)
+    }
+    
+    // MARK: Session Events
+    
+    func sessionDidChange(
+        _ sessionID: ObjectIdentifier,
+        to sessionState: HKWorkoutSessionState,
+        at date: Date
+    ) {
+        
+        guard isCurrentSession(sessionID), let session else { return }
+        
+        switch sessionState {
+        
+        case .running, .paused:
+            syncSession(session, currentlyIn: sessionState)
+        
+        case .stopped:
+            finishWorkout(at: date)
+        
+        case .ended:
+            resetSession()
+            startPendingSessionIfNeeded()
+        
+        default:
+            break
+            
+        }
+    }
+    
+    func sessionDidFail(_ sessionID: ObjectIdentifier) {
+        
+        guard isCurrentSession(sessionID), let session else { return }
+        
+        if isStoppingSession {
+            session.end()
+            resetSession()
+            startPendingSessionIfNeeded()
+            return
+        }
+        
+        isStoppingSession = true
+        stopFollowingSelection()
+        finishWorkout(at: .now)
+    }
+    
+    private func stopFollowingSelection() {
+        
+        pendingStartDate = nil
+        
+        if state == .running || state == .paused {
+            state = .notStarted
+        }
+    }
+    
+    private func isCurrentSession(_ sessionID: ObjectIdentifier) -> Bool {
+        
+        guard let session else { return false }
+        return ObjectIdentifier(session) == sessionID
+    }
+    
+    // MARK: Saving
+    
+    private func finishWorkout(at endDate: Date) {
+        
+        guard let session, let builder else { return }
+        
+        Task {
+            
+            do {
+                
                 try await builder.endCollection(at: endDate)
                 _ = try await builder.finishWorkout()
-                print("Successfully saved workout to HealthKit.")
+            
             } catch {
-                print("Failed to gracefully close or save workout: \(error.localizedDescription)")
+                
+                print("Failed to save workout: \(error.localizedDescription)")
+                
             }
             
+            session.end()
+            
+            guard isCurrentSession(ObjectIdentifier(session)) else { return }
             resetSession()
+            startPendingSessionIfNeeded()
         }
     }
     
     private func resetSession() {
-        self.session = nil
-        self.builder = nil
-    }
-}
-
-// MARK: - HKWorkoutSessionDelegate
-extension HKWorkoutManager: HKWorkoutSessionDelegate {
-    
-    // 1. Mark nonisolated so HealthKit's background thread can enter without crashing
-    nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didChangeTo toState: HKWorkoutSessionState, from fromState: HKWorkoutSessionState, date: Date) {
-        print("HKWorkoutSession changed state: \(toState.rawValue)")
         
-        if toState == .ended {
-            // 2. Hop back to the MainActor safely to update properties
-            Task { @MainActor in
-                self.resetSession()
-            }
-        }
+        session = nil
+        builder = nil
+        isStoppingSession = false
     }
-    
-    // 1. Mark nonisolated here too
-    nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {
-        print("HKWorkoutSession failed with error: \(error.localizedDescription)")
-        
-        // 2. Hop back to the MainActor safely
-        Task { @MainActor in
-            self.resetSession()
-        }
-    }
-}
-
-// MARK: - HKLiveWorkoutBuilderDelegate
-extension HKWorkoutManager: HKLiveWorkoutBuilderDelegate {
-    // 1. Mark nonisolated to handle events arriving on HealthKit's background queue
-    nonisolated func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {}
-    
-    nonisolated func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {}
 }
