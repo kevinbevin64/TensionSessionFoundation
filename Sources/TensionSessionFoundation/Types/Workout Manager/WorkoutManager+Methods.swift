@@ -65,6 +65,7 @@ public extension WorkoutManager {
         workout.id2 = UUID()
         
         unsortedHistory.append(workout)
+        exerciseHistorian.adjust(accordingTo: workout)
         
         if let freshTemplate = freshTemplate() {
             templateBuffer.insert(freshTemplate)
@@ -220,6 +221,7 @@ extension WorkoutManager {
         let dto = workout.getDTO()
         if unsortedHistory.contains(where: { $0.getDTO() == dto }) == false {
             unsortedHistory.append(workout)
+            exerciseHistorian.adjust(accordingTo: workout)
         }
         
         try? save()

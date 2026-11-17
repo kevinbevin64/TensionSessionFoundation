@@ -68,6 +68,24 @@ public final class WorkoutManager {
     
     @Transient
     @MainActor
+    public var exerciseHistorian: ExerciseHistorian {
+        get {
+            if let backingExerciseHistorian {
+                return backingExerciseHistorian
+            } else {
+                let exerciseHistorian = ExerciseHistorian(workoutManager: self)
+                backingExerciseHistorian = exerciseHistorian
+                return exerciseHistorian
+            }
+        }
+    }
+    
+    @Transient
+    @MainActor
+    private var backingExerciseHistorian: ExerciseHistorian?
+    
+    @Transient
+    @MainActor
     var lastUsedId2: UUID?
     
     @Transient
