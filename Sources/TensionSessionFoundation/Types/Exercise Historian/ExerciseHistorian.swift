@@ -62,6 +62,13 @@ public class ExerciseHistorian {
 
         let sortedExerciseHistory = await search.value
 
+        guard inFlightSearches[searchRule] == search else {
+            return await getSortedExerciseHistory(
+                forKind: kind,
+                equipmentMatchingRule: equipmentMatchingRule
+            )
+        }
+
         sortedExerciseHistories[searchRule] = sortedExerciseHistory
         inFlightSearches[searchRule] = nil
 
@@ -74,6 +81,7 @@ public class ExerciseHistorian {
         // Invalidating the dictionary is okay for now and achieves the same end result
 
         sortedExerciseHistories = [:]
+        inFlightSearches = [:]
     }
 
     private func searchHistory(for searchRule: SearchRule) async -> [HistoricalExercise] {

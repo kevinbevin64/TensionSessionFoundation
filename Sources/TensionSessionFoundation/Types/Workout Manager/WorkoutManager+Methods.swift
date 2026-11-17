@@ -54,14 +54,18 @@ public extension WorkoutManager {
         setTemplateOrder()
     }
     
-    func rememberHistoricalWorkout() {
-        
-        guard let workout = templateBuffer.selection else { return }
+    func rememberHistoricalWorkout() -> Workout? {
+
+        guard let workout = templateBuffer.selection else {
+            assertionFailure()
+            return nil
+        }
         assert(templateBuffer.isReadyToEvictFinishedWorkout)
         
         workout.id2 = UUID()
         
         unsortedHistory.append(workout)
+        exerciseHistorian.adjust(accordingTo: workout)
         
         if let freshTemplate = freshTemplate() {
             templateBuffer.insert(freshTemplate)
@@ -70,6 +74,8 @@ public extension WorkoutManager {
         }
         
         try? save()
+
+        return workout
     }
     
     func freshTemplate() -> Workout? {
@@ -215,6 +221,7 @@ extension WorkoutManager {
         let dto = workout.getDTO()
         if unsortedHistory.contains(where: { $0.getDTO() == dto }) == false {
             unsortedHistory.append(workout)
+            exerciseHistorian.adjust(accordingTo: workout)
         }
         
         try? save()
