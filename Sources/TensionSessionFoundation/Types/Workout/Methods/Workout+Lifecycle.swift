@@ -13,6 +13,7 @@ public extension Workout {
     func start() {
         assert(state == .unstarted)
         self.state = .resumed
+        self.startInstant = Date.now
     }
     
     func pause() {
@@ -28,6 +29,5 @@ public extension Workout {
     func end() {
         assert(state == .resumed || state == .paused)
         self.state = .ended
-        self.startInstant = Date.now
     }
 }
