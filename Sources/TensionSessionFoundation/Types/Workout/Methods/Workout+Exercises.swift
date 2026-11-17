@@ -72,17 +72,6 @@ public extension Workout {
         }
     }
 
-    func copy(settingWeightPlanned weightPlanned: Weight, forExerciseWithId2 id2: UUID) -> Workout {
-
-        assert(unsortedExercises.contains(where: { $0.id2 == id2 }))
-
-        let copy = Workout(fromDTO: getDTO())
-        if let exercise = copy.unsortedExercises.first(where: { $0.id2 == id2 }) {
-            exercise.weightPlanned = weightPlanned
-        }
-        return copy
-    }
-
     internal func exerciseMatching(searchRule: ExerciseHistorian.SearchRule) -> Exercise? {
 
         return unsortedExercises.first(where: { exercise in
