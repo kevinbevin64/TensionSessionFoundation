@@ -12,7 +12,7 @@ extension Exercise: Duplicatable {
     func duplicated() -> Exercise {
         
         return Exercise(
-            id2: UUID(),
+            id2: id2,
             order: order,
             kind: kind,
             equipment: equipment,

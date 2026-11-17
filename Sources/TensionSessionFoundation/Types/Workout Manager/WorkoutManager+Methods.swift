@@ -63,6 +63,9 @@ public extension WorkoutManager {
         assert(templateBuffer.isReadyToEvictFinishedWorkout)
         
         workout.id2 = UUID()
+        for exercise in workout.unsortedExercises {
+            exercise.id2 = UUID()
+        }
         
         unsortedHistory.append(workout)
         exerciseHistorian.adjust(accordingTo: workout)
@@ -173,7 +176,7 @@ extension WorkoutManager {
         try? save()
     }
     
-    func editTemplate(accordingTo workout: Workout) {
+    public func editTemplate(accordingTo workout: Workout) {
         
         guard let index = unsortedTemplates.firstIndex(where: {
             $0.id2 == workout.id2
