@@ -156,6 +156,22 @@ public extension WorkoutManager {
         
         try? save()
     }
+
+    #if os(watchOS)
+    func editTemplateAndRequestApproval(accordingTo workout: Workout) {
+
+        guard let formerWorkout = unsortedTemplates.first(where: { $0.id2 == workout.id2 }) else {
+            assertionFailure()
+            return
+        }
+
+        companion?.requestTemplateWorkoutEditApproval(
+            former: formerWorkout,
+            final: workout
+        )
+        editTemplate(accordingTo: workout)
+    }
+    #endif
 }
 
 // MARK: Invoked by Companion
@@ -176,7 +192,7 @@ extension WorkoutManager {
         try? save()
     }
     
-    public func editTemplate(accordingTo workout: Workout) {
+    func editTemplate(accordingTo workout: Workout) {
         
         guard let index = unsortedTemplates.firstIndex(where: {
             $0.id2 == workout.id2
