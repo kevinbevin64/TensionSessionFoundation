@@ -8,25 +8,39 @@
 import Foundation
 
 extension Exercise: WatchTransferrable {
-    
+
+    func dictionaryForm() throws -> [String: Any] {
+
+        return try getDTO().dictionaryForm()
+    }
+
+    convenience init(fromDictionary dictionary: [String: Any]) throws {
+
+        let dto = try DTO(fromDictionary: dictionary)
+        self.init(fromDTO: dto)
+    }
+}
+
+public extension Exercise {
+
     nonisolated
     struct DTO: Codable, WatchTransferrable, Equatable {
         
-        var id2: UUID
-        
-        var order: Int
-        
-        var kind: Catalog.Kind
-        
-        var equipment: Equipment
-        
-        var setsPlanned: Int
-        
-        var repsPlanned: Int
-        
-        var weightPlanned: Weight
-        
-        var setDetails: [SetDetail]
+        public var id2: UUID
+
+        public var order: Int
+
+        public var kind: Catalog.Kind
+
+        public var equipment: Equipment
+
+        public var setsPlanned: Int
+
+        public var repsPlanned: Int
+
+        public var weightPlanned: Weight
+
+        public var setDetails: [SetDetail]
     }
     
     func getDTO() -> DTO {
@@ -44,7 +58,7 @@ extension Exercise: WatchTransferrable {
     }
     
     convenience init(fromDTO dto: DTO) {
-        
+
         self.init(
             id2: dto.id2,
             order: dto.order,
@@ -55,17 +69,6 @@ extension Exercise: WatchTransferrable {
             weightPlanned: dto.weightPlanned,
             setDetails: dto.setDetails
         )
-    }
-    
-    func dictionaryForm() throws -> [String: Any] {
-        
-        return try getDTO().dictionaryForm()
-    }
-    
-    convenience init(fromDictionary dictionary: [String: Any]) throws {
-     
-        let dto = try DTO(fromDictionary: dictionary)
-        self.init(fromDTO: dto)
     }
 }
 

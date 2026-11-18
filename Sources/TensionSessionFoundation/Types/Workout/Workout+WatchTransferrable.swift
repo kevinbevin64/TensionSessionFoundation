@@ -11,18 +11,18 @@ extension Workout: WatchTransferrable {
     
     nonisolated
     struct DTO: Codable & WatchTransferrable & Equatable {
-        
-        var id2: UUID
-        
-        var order: Int
-        
-        var name: String
-        
-        var state: State
-        
-        var startInstant: Date?
-        
-        var sortedExercises: [Exercise.DTO]
+
+        public var id2: UUID
+
+        public var order: Int
+
+        public var name: String
+
+        public var state: State
+
+        public var startInstant: Date?
+
+        public var sortedExercises: [Exercise.DTO]
     }
     
     func getDTO() -> DTO {
