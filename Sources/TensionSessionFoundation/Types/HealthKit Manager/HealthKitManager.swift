@@ -24,6 +24,8 @@ public final class HKWorkoutManager: NSObject {
     
     private var isStoppingSession = false
     
+    private var isSavingWorkout = true
+    
     private var pendingStartDate: Date?
     
     private static let workoutConfiguration: HKWorkoutConfiguration = {
@@ -114,12 +116,16 @@ public final class HKWorkoutManager: NSObject {
         session.resume()
     }
     
-    func end() {
+    func end(savingWorkout: Bool) {
         
         guard state == .running || state == .paused else { return }
         
         state = .ended
         pendingStartDate = nil
+        
+        if isStoppingSession == false {
+            isSavingWorkout = savingWorkout
+        }
         
         guard let session, session.state == .running || session.state == .paused else { return }
         stopSession()
@@ -295,16 +301,26 @@ public final class HKWorkoutManager: NSObject {
         
         guard let session, let builder else { return }
         
+        let isSavingWorkout = isSavingWorkout
+        
         Task {
             
-            do {
+            if isSavingWorkout {
                 
-                try await builder.endCollection(at: endDate)
-                _ = try await builder.finishWorkout()
+                do {
+                    
+                    try await builder.endCollection(at: endDate)
+                    _ = try await builder.finishWorkout()
+                
+                } catch {
+                    
+                    print("Failed to save workout: \(error.localizedDescription)")
+                    
+                }
             
-            } catch {
+            } else {
                 
-                print("Failed to save workout: \(error.localizedDescription)")
+                builder.discardWorkout()
                 
             }
             
@@ -321,5 +337,6 @@ public final class HKWorkoutManager: NSObject {
         session = nil
         builder = nil
         isStoppingSession = false
+        isSavingWorkout = true
     }
 }

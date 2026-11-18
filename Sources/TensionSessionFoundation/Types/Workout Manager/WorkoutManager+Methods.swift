@@ -81,6 +81,19 @@ public extension WorkoutManager {
         return workout
     }
     
+    func forgetFinishedWorkout() {
+        
+        assert(templateBuffer.isReadyToEvictFinishedWorkout)
+        
+        if let freshTemplate = freshTemplate() {
+            templateBuffer.insert(freshTemplate)
+        } else {
+            templateBuffer.clearSelection()
+        }
+        
+        try? save()
+    }
+    
     func freshTemplate() -> Workout? {
         
         guard let lastUsedId2 else {
