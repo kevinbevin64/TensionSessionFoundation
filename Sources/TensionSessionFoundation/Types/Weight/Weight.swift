@@ -25,6 +25,7 @@ public struct Weight: Codable, Hashable, Equatable, Sendable {
     }
 }
 
+nonisolated
 public extension Weight {
     
     func converted(to targetUnit: Unit) -> Weight {

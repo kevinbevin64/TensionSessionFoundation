@@ -88,10 +88,6 @@ public final class WorkoutManager {
     @MainActor
     var lastUsedId2: UUID?
     
-    @Transient
-    @MainActor
-    var companion: Companion?
-    
     init(
         templates: [Workout],
         history: [Workout],
