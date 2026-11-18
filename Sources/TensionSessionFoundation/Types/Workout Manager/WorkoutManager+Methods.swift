@@ -63,6 +63,9 @@ public extension WorkoutManager {
         assert(templateBuffer.isReadyToEvictFinishedWorkout)
         
         workout.id2 = UUID()
+        for exercise in workout.unsortedExercises {
+            exercise.id2 = UUID()
+        }
         
         unsortedHistory.append(workout)
         exerciseHistorian.adjust(accordingTo: workout)
