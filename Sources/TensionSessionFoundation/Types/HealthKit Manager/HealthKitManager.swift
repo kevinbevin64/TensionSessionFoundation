@@ -269,6 +269,9 @@ public final class HKWorkoutManager: NSObject {
         guard isCurrentSession(sessionID), let session else { return }
         
         if isStoppingSession {
+            if isSavingWorkout == false {
+                builder?.discardWorkout()
+            }
             session.end()
             resetSession()
             startPendingSessionIfNeeded()
