@@ -22,9 +22,9 @@ public final class HKWorkoutManager: NSObject {
     
     private var builder: HKLiveWorkoutBuilder?
     
-    private var isStoppingSession = false
+    private var isWaitingForStop = false
     
-    private var isSavingWorkout = true
+    private var shouldSaveWhenStopped = true
     
     private var pendingStartDate: Date?
     
@@ -102,7 +102,7 @@ public final class HKWorkoutManager: NSObject {
         
         state = .paused
         
-        guard let session, !isStoppingSession, session.state == .running else { return }
+        guard let session, !isWaitingForStop, session.state == .running else { return }
         session.pause()
     }
     
@@ -112,7 +112,7 @@ public final class HKWorkoutManager: NSObject {
         
         state = .running
         
-        guard let session, !isStoppingSession, session.state == .paused else { return }
+        guard let session, !isWaitingForStop, session.state == .paused else { return }
         session.resume()
     }
     
@@ -123,8 +123,8 @@ public final class HKWorkoutManager: NSObject {
         state = .ended
         pendingStartDate = nil
         
-        if isStoppingSession == false {
-            isSavingWorkout = saveWorkout
+        if isWaitingForStop == false {
+            shouldSaveWhenStopped = saveWorkout
         }
         
         guard let session, session.state == .running || session.state == .paused else { return }
@@ -173,7 +173,7 @@ public final class HKWorkoutManager: NSObject {
         
         session = newSession
         builder = newBuilder
-        isStoppingSession = false
+        isWaitingForStop = false
         
         newSession.prepare()
         newSession.startActivity(with: startDate)
@@ -200,15 +200,15 @@ public final class HKWorkoutManager: NSObject {
     
     private func stopSession() {
         
-        guard let session, !isStoppingSession else { return }
+        guard let session, !isWaitingForStop else { return }
         
-        isStoppingSession = true
+        isWaitingForStop = true
         session.stopActivity(with: .now)
     }
     
     private func syncSession(_ session: HKWorkoutSession, currentlyIn sessionState: HKWorkoutSessionState) {
         
-        guard !isStoppingSession else { return }
+        guard !isWaitingForStop else { return }
         
         switch state {
         
@@ -268,8 +268,8 @@ public final class HKWorkoutManager: NSObject {
         
         guard isCurrentSession(sessionID), let session else { return }
         
-        if isStoppingSession {
-            if isSavingWorkout == false {
+        if isWaitingForStop {
+            if shouldSaveWhenStopped == false {
                 builder?.discardWorkout()
             }
             session.end()
@@ -278,7 +278,7 @@ public final class HKWorkoutManager: NSObject {
             return
         }
         
-        isStoppingSession = true
+        isWaitingForStop = true
         stopFollowingSelection()
         finishWorkout(at: .now)
     }
@@ -304,11 +304,11 @@ public final class HKWorkoutManager: NSObject {
         
         guard let session, let builder else { return }
         
-        let isSavingWorkout = isSavingWorkout
+        let shouldSaveWhenStopped = shouldSaveWhenStopped
         
         Task {
             
-            if isSavingWorkout {
+            if shouldSaveWhenStopped {
                 
                 do {
                     
@@ -339,7 +339,7 @@ public final class HKWorkoutManager: NSObject {
         
         session = nil
         builder = nil
-        isStoppingSession = false
-        isSavingWorkout = true
+        isWaitingForStop = false
+        shouldSaveWhenStopped = true
     }
 }
