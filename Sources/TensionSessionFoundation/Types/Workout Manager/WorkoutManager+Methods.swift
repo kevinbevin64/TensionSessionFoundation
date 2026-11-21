@@ -86,7 +86,6 @@ public extension WorkoutManager {
         assert(unsortedHistory.contains { $0.id2 == workout.id2 })
         
         unsortedHistory.removeAll { $0.id2 == workout.id2 }
-        exerciseHistorian.adjust(accordingTo: workout)
         
         try? save()
     }
