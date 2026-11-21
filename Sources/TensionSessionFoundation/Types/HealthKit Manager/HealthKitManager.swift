@@ -28,6 +28,14 @@ public final class HKWorkoutManager: NSObject {
     
     private var pendingStartDate: Date?
     
+    private var workoutSavedOnFailure: WorkoutSavedOnFailure?
+    
+    private static let workoutSampleTypes: [HKQuantityType] = [
+        HKQuantityType(.activeEnergyBurned),
+        HKQuantityType(.basalEnergyBurned),
+        HKQuantityType(.heartRate)
+    ]
+    
     private static let workoutConfiguration: HKWorkoutConfiguration = {
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = .traditionalStrengthTraining
@@ -117,6 +125,12 @@ public final class HKWorkoutManager: NSObject {
     }
     
     func end(saveWorkout: Bool) {
+        
+        if saveWorkout == false {
+            discardWorkoutSavedOnFailure()
+        } else {
+            workoutSavedOnFailure = nil
+        }
         
         guard state == .running || state == .paused else { return }
         
@@ -280,6 +294,11 @@ public final class HKWorkoutManager: NSObject {
         
         isWaitingForStop = true
         stopFollowingSelection()
+        
+        if shouldSaveWhenStopped {
+            workoutSavedOnFailure = .saving
+        }
+        
         finishWorkout(at: .now)
     }
     
@@ -313,11 +332,13 @@ public final class HKWorkoutManager: NSObject {
                 do {
                     
                     try await builder.endCollection(at: endDate)
-                    _ = try await builder.finishWorkout()
+                    let workout = try await builder.finishWorkout()
+                    workoutDidSave(workout)
                 
                 } catch {
                     
                     print("Failed to save workout: \(error.localizedDescription)")
+                    workoutSavedOnFailure = nil
                     
                 }
             
@@ -332,6 +353,78 @@ public final class HKWorkoutManager: NSObject {
             guard isCurrentSession(ObjectIdentifier(session)) else { return }
             resetSession()
             startPendingSessionIfNeeded()
+        }
+    }
+    
+    private func workoutDidSave(_ workout: HKWorkout?) {
+        
+        guard let workoutSavedOnFailure else { return }
+        
+        switch workoutSavedOnFailure {
+        
+        case .saving:
+            if let workout {
+                self.workoutSavedOnFailure = .saved(workout)
+            } else {
+                self.workoutSavedOnFailure = nil
+            }
+        
+        case .savingThenDelete:
+            self.workoutSavedOnFailure = nil
+            if let workout {
+                delete(workout)
+            }
+        
+        case .saved:
+            assertionFailure()
+            
+        }
+    }
+    
+    private func discardWorkoutSavedOnFailure() {
+        
+        guard let workoutSavedOnFailure else { return }
+        
+        switch workoutSavedOnFailure {
+        
+        case .saving, .savingThenDelete:
+            self.workoutSavedOnFailure = .savingThenDelete
+        
+        case .saved(let workout):
+            self.workoutSavedOnFailure = nil
+            delete(workout)
+            
+        }
+    }
+    
+    private func delete(_ workout: HKWorkout) {
+        
+        let predicate = HKQuery.predicateForObjects(from: workout)
+        
+        Task {
+            
+            for sampleType in Self.workoutSampleTypes {
+                
+                do {
+                    
+                    _ = try await healthStore.deleteObjects(of: sampleType, predicate: predicate)
+                
+                } catch {
+                    
+                    print("Failed to delete workout samples: \(error.localizedDescription)")
+                    
+                }
+            }
+            
+            do {
+                
+                try await healthStore.delete(workout)
+            
+            } catch {
+                
+                print("Failed to delete workout: \(error.localizedDescription)")
+                
+            }
         }
     }
     
