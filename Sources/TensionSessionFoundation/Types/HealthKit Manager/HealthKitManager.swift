@@ -116,7 +116,7 @@ public final class HKWorkoutManager: NSObject {
         session.resume()
     }
     
-    func end(savingWorkout: Bool) {
+    func end(saveWorkout: Bool) {
         
         guard state == .running || state == .paused else { return }
         
@@ -124,7 +124,7 @@ public final class HKWorkoutManager: NSObject {
         pendingStartDate = nil
         
         if isStoppingSession == false {
-            isSavingWorkout = savingWorkout
+            isSavingWorkout = saveWorkout
         }
         
         guard let session, session.state == .running || session.state == .paused else { return }
