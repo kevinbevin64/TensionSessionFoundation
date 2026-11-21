@@ -81,6 +81,16 @@ public extension WorkoutManager {
         return workout
     }
     
+    func deleteHistoricalWorkout(_ workout: Workout) {
+        
+        assert(unsortedHistory.contains { $0.id2 == workout.id2 })
+        
+        unsortedHistory.removeAll { $0.id2 == workout.id2 }
+        exerciseHistorian.adjust(accordingTo: workout)
+        
+        try? save()
+    }
+    
     func freshTemplate() -> Workout? {
         
         guard let lastUsedId2 else {
