@@ -127,7 +127,7 @@ public extension TemplateBuffer {
         healthKitManager.resume()
     }
     
-    func end() {
+    func end(saveWorkout: Bool) {
         
         guard let selection else {
             assertionFailure()
@@ -138,7 +138,7 @@ public extension TemplateBuffer {
         
         selection.end()
         
-        healthKitManager.end()
+        healthKitManager.end(saveWorkout: saveWorkout)
     }
 
     func deleteExercise(withId2 id2: UUID) {
