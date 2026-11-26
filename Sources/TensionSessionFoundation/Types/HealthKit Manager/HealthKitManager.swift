@@ -10,7 +10,7 @@ import Observation
 
 @Observable
 @MainActor
-public final class HKWorkoutManager: NSObject {
+public final class HealthKitManager: NSObject {
     
     public private(set) var state: HKWorkoutSessionState = .notStarted
     
@@ -159,7 +159,7 @@ public final class HKWorkoutManager: NSObject {
     
     private func beginSession(at startDate: Date) {
         
-        let configuration = HKWorkoutManager.workoutConfiguration
+        let configuration = HealthKitManager.workoutConfiguration
         let newSession: HKWorkoutSession
         
         do {

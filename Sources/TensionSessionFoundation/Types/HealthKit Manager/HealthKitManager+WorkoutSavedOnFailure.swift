@@ -7,7 +7,7 @@
 
 import HealthKit
 
-extension HKWorkoutManager {
+extension HealthKitManager {
     
     enum WorkoutSavedOnFailure {
         
