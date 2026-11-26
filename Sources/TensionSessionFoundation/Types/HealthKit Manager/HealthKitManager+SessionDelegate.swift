@@ -7,7 +7,7 @@
 
 import HealthKit
 
-extension HKWorkoutManager: HKWorkoutSessionDelegate {
+extension HealthKitManager: HKWorkoutSessionDelegate {
     
     nonisolated
     public func workoutSession(

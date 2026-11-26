@@ -14,7 +14,7 @@ final public class TemplateBuffer {
     
     public private(set) var lastSetCompletion: LastSetCompletion?
     
-    public let healthKitManager: HKWorkoutManager
+    public let healthKitManager: HealthKitManager
     
     var onInsertion: (UUID) -> Void
     
@@ -24,7 +24,7 @@ final public class TemplateBuffer {
         onInsertion: @escaping (UUID) -> Void,
         onEmptying: @escaping () -> Void
     ) {
-        self.healthKitManager = HKWorkoutManager()
+        self.healthKitManager = HealthKitManager()
         self.onInsertion = onInsertion
         self.onEmptying = onEmptying
     }
@@ -127,7 +127,7 @@ public extension TemplateBuffer {
         healthKitManager.resume()
     }
     
-    func end() {
+    func end(saveWorkout: Bool) {
         
         guard let selection else {
             assertionFailure()
@@ -138,7 +138,7 @@ public extension TemplateBuffer {
         
         selection.end()
         
-        healthKitManager.end()
+        healthKitManager.end(saveWorkout: saveWorkout)
     }
 
     func deleteExercise(withId2 id2: UUID) {

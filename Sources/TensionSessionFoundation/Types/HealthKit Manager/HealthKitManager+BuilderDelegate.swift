@@ -7,7 +7,7 @@
 
 import HealthKit
 
-extension HKWorkoutManager: HKLiveWorkoutBuilderDelegate {
+extension HealthKitManager: HKLiveWorkoutBuilderDelegate {
     
     nonisolated
     public func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {}

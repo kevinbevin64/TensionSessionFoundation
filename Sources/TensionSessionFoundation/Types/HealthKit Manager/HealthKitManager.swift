@@ -10,7 +10,7 @@ import Observation
 
 @Observable
 @MainActor
-public final class HKWorkoutManager: NSObject {
+public final class HealthKitManager: NSObject {
     
     public private(set) var state: HKWorkoutSessionState = .notStarted
     
@@ -22,9 +22,19 @@ public final class HKWorkoutManager: NSObject {
     
     private var builder: HKLiveWorkoutBuilder?
     
-    private var isStoppingSession = false
+    private var isWaitingForStop = false
+    
+    private var shouldSaveWhenStopped = true
     
     private var pendingStartDate: Date?
+    
+    private var workoutSavedOnFailure: WorkoutSavedOnFailure?
+    
+    private static let workoutSampleTypes: [HKQuantityType] = [
+        HKQuantityType(.activeEnergyBurned),
+        HKQuantityType(.basalEnergyBurned),
+        HKQuantityType(.heartRate)
+    ]
     
     private static let workoutConfiguration: HKWorkoutConfiguration = {
         let configuration = HKWorkoutConfiguration()
@@ -100,7 +110,7 @@ public final class HKWorkoutManager: NSObject {
         
         state = .paused
         
-        guard let session, !isStoppingSession, session.state == .running else { return }
+        guard let session, !isWaitingForStop, session.state == .running else { return }
         session.pause()
     }
     
@@ -110,16 +120,26 @@ public final class HKWorkoutManager: NSObject {
         
         state = .running
         
-        guard let session, !isStoppingSession, session.state == .paused else { return }
+        guard let session, !isWaitingForStop, session.state == .paused else { return }
         session.resume()
     }
     
-    func end() {
+    func end(saveWorkout: Bool) {
+        
+        if saveWorkout == false {
+            discardWorkoutSavedOnFailure()
+        } else {
+            workoutSavedOnFailure = nil
+        }
         
         guard state == .running || state == .paused else { return }
         
         state = .ended
         pendingStartDate = nil
+        
+        if isWaitingForStop == false {
+            shouldSaveWhenStopped = saveWorkout
+        }
         
         guard let session, session.state == .running || session.state == .paused else { return }
         stopSession()
@@ -139,7 +159,7 @@ public final class HKWorkoutManager: NSObject {
     
     private func beginSession(at startDate: Date) {
         
-        let configuration = HKWorkoutManager.workoutConfiguration
+        let configuration = HealthKitManager.workoutConfiguration
         let newSession: HKWorkoutSession
         
         do {
@@ -167,7 +187,7 @@ public final class HKWorkoutManager: NSObject {
         
         session = newSession
         builder = newBuilder
-        isStoppingSession = false
+        isWaitingForStop = false
         
         newSession.prepare()
         newSession.startActivity(with: startDate)
@@ -194,15 +214,15 @@ public final class HKWorkoutManager: NSObject {
     
     private func stopSession() {
         
-        guard let session, !isStoppingSession else { return }
+        guard let session, !isWaitingForStop else { return }
         
-        isStoppingSession = true
+        isWaitingForStop = true
         session.stopActivity(with: .now)
     }
     
     private func syncSession(_ session: HKWorkoutSession, currentlyIn sessionState: HKWorkoutSessionState) {
         
-        guard !isStoppingSession else { return }
+        guard !isWaitingForStop else { return }
         
         switch state {
         
@@ -262,15 +282,23 @@ public final class HKWorkoutManager: NSObject {
         
         guard isCurrentSession(sessionID), let session else { return }
         
-        if isStoppingSession {
+        if isWaitingForStop {
+            if shouldSaveWhenStopped == false {
+                builder?.discardWorkout()
+            }
             session.end()
             resetSession()
             startPendingSessionIfNeeded()
             return
         }
         
-        isStoppingSession = true
+        isWaitingForStop = true
         stopFollowingSelection()
+        
+        if shouldSaveWhenStopped {
+            workoutSavedOnFailure = .saving
+        }
+        
         finishWorkout(at: .now)
     }
     
@@ -295,16 +323,28 @@ public final class HKWorkoutManager: NSObject {
         
         guard let session, let builder else { return }
         
+        let shouldSaveWhenStopped = shouldSaveWhenStopped
+        
         Task {
             
-            do {
+            if shouldSaveWhenStopped {
                 
-                try await builder.endCollection(at: endDate)
-                _ = try await builder.finishWorkout()
+                do {
+                    
+                    try await builder.endCollection(at: endDate)
+                    let workout = try await builder.finishWorkout()
+                    workoutDidSave(workout)
+                
+                } catch {
+                    
+                    print("Failed to save workout: \(error.localizedDescription)")
+                    workoutSavedOnFailure = nil
+                    
+                }
             
-            } catch {
+            } else {
                 
-                print("Failed to save workout: \(error.localizedDescription)")
+                builder.discardWorkout()
                 
             }
             
@@ -316,10 +356,83 @@ public final class HKWorkoutManager: NSObject {
         }
     }
     
+    private func workoutDidSave(_ workout: HKWorkout?) {
+        
+        guard let workoutSavedOnFailure else { return }
+        
+        switch workoutSavedOnFailure {
+        
+        case .saving:
+            if let workout {
+                self.workoutSavedOnFailure = .saved(workout)
+            } else {
+                self.workoutSavedOnFailure = nil
+            }
+        
+        case .savingThenDelete:
+            self.workoutSavedOnFailure = nil
+            if let workout {
+                delete(workout)
+            }
+        
+        case .saved:
+            assertionFailure()
+            
+        }
+    }
+    
+    private func discardWorkoutSavedOnFailure() {
+        
+        guard let workoutSavedOnFailure else { return }
+        
+        switch workoutSavedOnFailure {
+        
+        case .saving, .savingThenDelete:
+            self.workoutSavedOnFailure = .savingThenDelete
+        
+        case .saved(let workout):
+            self.workoutSavedOnFailure = nil
+            delete(workout)
+            
+        }
+    }
+    
+    private func delete(_ workout: HKWorkout) {
+        
+        let predicate = HKQuery.predicateForObjects(from: workout)
+        
+        Task {
+            
+            for sampleType in Self.workoutSampleTypes {
+                
+                do {
+                    
+                    _ = try await healthStore.deleteObjects(of: sampleType, predicate: predicate)
+                
+                } catch {
+                    
+                    print("Failed to delete workout samples: \(error.localizedDescription)")
+                    
+                }
+            }
+            
+            do {
+                
+                try await healthStore.delete(workout)
+            
+            } catch {
+                
+                print("Failed to delete workout: \(error.localizedDescription)")
+                
+            }
+        }
+    }
+    
     private func resetSession() {
         
         session = nil
         builder = nil
-        isStoppingSession = false
+        isWaitingForStop = false
+        shouldSaveWhenStopped = true
     }
 }
