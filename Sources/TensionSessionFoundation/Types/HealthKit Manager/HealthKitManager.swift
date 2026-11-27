@@ -88,6 +88,12 @@ public final class HealthKitManager: NSObject {
             return
         }
         
+        guard isWorkoutSessionSupported else {
+            print("Workout sessions only run on the watch for now.")
+            state = .notStarted
+            return
+        }
+        
         guard canSaveWorkouts else {
             print("Not allowed to save workouts, so the workout session won't run.")
             state = .notStarted
@@ -150,6 +156,15 @@ public final class HealthKitManager: NSObject {
         if state == .ended {
             state = .notStarted
         }
+    }
+    
+    private var isWorkoutSessionSupported: Bool {
+        
+        #if os(watchOS)
+        true
+        #else
+        false
+        #endif
     }
     
     private var canSaveWorkouts: Bool {
